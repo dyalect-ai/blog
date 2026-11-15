@@ -24,21 +24,21 @@ from urllib.parse import urlparse
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = json.load(open(os.path.join(HERE, "site.json"), encoding="utf-8"))
 BASE_PATH = urlparse(SITE["base"]).path or "/"
-AUTHOR = "Veolyn Research"
+AUTHOR = "Dyalect Research"
 # back matter stays out of the table of contents
 SKIP_TOC = {"acknowledgements", "acknowledgments", "citation", "references"}
 POSTS = sorted(json.load(open(os.path.join(HERE, "posts.json"), encoding="utf-8")), key=lambda p: p["date"], reverse=True)
 MINUTES = {}  # slug -> reading time, filled while each post is enhanced
 
-MARK = ('<svg viewBox="0 0 32 32" class="mark"><rect width="32" height="32" rx="8" fill="#1b1730"/>'
-        '<rect x="6" y="6" width="20" height="20" rx="4.5" fill="none" stroke="#F6F4FF" stroke-width="2"/>'
-        '<rect x="15.2" y="9" width="8" height="8" rx="1.5" fill="#C6E85A"/></svg>')
+# The Dyalect mark: a frame with a gem in its top-right corner. On the page it takes the
+# text colour (one orange element per screen is the headline's); the favicon carries the orange.
+MARK = ('<svg viewBox="0 0 32 32" class="mark" aria-hidden="true">'
+        '<rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/>'
+        '<rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg>')
 FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E"
-           "%3Crect width='32' height='32' rx='8' fill='%235747C1'/%3E%3Crect x='6' y='6' width='20' height='20' "
-           "rx='4.5' fill='none' stroke='%23F6F4FF' stroke-width='2'/%3E%3Crect x='15.2' y='9' width='8' height='8' "
-           "rx='1.5' fill='%23C6E85A'/%3E%3C/svg%3E")
-ORBS = ('<div class="orb" style="width:520px;height:520px;right:-140px;top:-160px;background:#7b6be0;opacity:.55"></div>'
-        '<div class="orb" style="width:380px;height:380px;left:-120px;bottom:-200px;background:#c6e85a;opacity:.16"></div>')
+           "%3Crect width='32' height='32' rx='4' fill='%23000'/%3E%3Crect x='6' y='6' width='20' height='20' rx='2' "
+           "fill='none' stroke='%23fff' stroke-width='2'/%3E%3Crect x='15.5' y='9.5' width='7' height='7' "
+           "fill='%23F7611D'/%3E%3C/svg%3E")
 
 FEED_LINK = '<link rel="alternate" type="application/atom+xml" title="{name}" href="{href}">'
 SKIP = '<a class="skip" href="#main">Skip to content</a>'
@@ -47,36 +47,37 @@ FOOTER_NAV = ('<nav><a href="{rel}">Home</a><a href="{rel}posts/">All posts</a>'
               '<a href="{rel}feed.xml">RSS</a></nav>')
 
 POST_CSS = """<style>
-/* build.py additions: skip link, contents, figure links, footer, print */
-.skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #1b1730; color: #fff; padding: 10px 16px; border-radius: 0 0 10px 0; }
+/* build.py additions: skip link, contents, figure links, footer, print (Signal design system) */
+.skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #000; color: #fff; padding: 10px 16px; }
 .skip:focus { left: 0; }
-:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 4px; }
-nav.toc { margin: 0 0 38px; padding: 22px 26px 18px; border: 1px solid rgba(87,71,193,.16); border-radius: 18px; background: #fff; box-shadow: 0 2px 10px rgba(40,26,120,.04); }
-nav.toc .toc-h { margin: 0 0 10px; font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted-ink); }
+:focus-visible { outline: 2px solid #CF4607; outline-offset: 2px; }
+nav.toc { margin: 0 0 56px; padding: 12px 0 16px; border-top: 1px solid #000; border-bottom: 1px solid #C2C0B9; }
+nav.toc .toc-h { margin: 0 0 12px; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5B5A55; }
 nav.toc ol { margin: 0; padding: 0; list-style: none; }
 nav.toc li { margin: 0; }
-nav.toc li.l2 + li.l2 { margin-top: 8px; }
-nav.toc a { display: grid; grid-template-columns: 2.7em 1fr; align-items: baseline; gap: 0 6px; padding: 6px 9px; margin: 0 -9px; border-bottom: 0; border-radius: 9px; color: var(--ink); text-decoration: none; font-size: 15.5px; line-height: 1.35; }
-nav.toc a:hover { background: rgba(87,71,193,.07); }
-nav.toc .n { font: 600 11px/1 var(--mono); letter-spacing: .07em; color: var(--purple); }
-nav.toc li.l3 a { font-size: 14px; color: var(--muted-ink); padding-left: 20px; }
-nav.toc li.l3 a:hover { color: var(--ink); }
+nav.toc li.l2 + li.l2 { margin-top: 4px; }
+nav.toc a { display: grid; grid-template-columns: 3em 1fr; align-items: baseline; gap: 0 4px; padding: 5px 8px; margin: 0 -8px;
+            border-bottom: 0; border-radius: 2px; color: #000; text-decoration: none; font-size: 16px; line-height: 1.35;
+            transition: background 120ms cubic-bezier(.2,0,0,1); }
+nav.toc a:hover { background: #F4F3EF; }
+nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #5B5A55; }
+nav.toc li.l3 a { font-size: 14px; color: #5B5A55; padding-left: 20px; }
+nav.toc li.l3 a:hover { color: #000; }
 nav.toc + h2 { margin-top: 16px; }
 @media (max-width: 640px) {
-  nav.toc { padding: 18px 16px 14px; border-radius: 14px; }
-  nav.toc a { grid-template-columns: 2.3em 1fr; font-size: 14.5px; padding: 5px 7px; margin: 0 -7px; }
+  nav.toc a { grid-template-columns: 2.6em 1fr; font-size: 15px; }
   nav.toc li.l3 a { font-size: 13.5px; padding-left: 14px; }
 }
-a.figref { color: var(--purple); text-decoration: none; white-space: nowrap; border-bottom: 1px solid rgba(87,71,193,.3); }
-a.figref:hover { background: rgba(87,71,193,.08); }
+a.figref { color: #000; text-decoration: none; white-space: nowrap; border-bottom: 1px solid #A09E97; }
+a.figref:hover { border-bottom-color: #000; }
 figure[id] { scroll-margin-top: 24px; }
 h2[id], h3[id] { scroll-margin-top: 24px; }
-p.totop { margin: 44px 0 0; text-align: center; }
-p.totop a { font: 600 12.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--purple); text-decoration: none; border-bottom: 0; }
-p.totop a:hover { text-decoration: underline; }
-footer nav { display: flex; gap: 18px; }
+p.totop { margin: 56px 0 0; }
+p.totop a { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #000; text-decoration: none; border-bottom: 1px solid #000; }
+p.totop a:hover { border-bottom-width: 2px; }
+footer nav { display: flex; gap: 28px; }
 footer nav a { color: inherit; text-decoration: none; border-bottom: 0; }
-footer nav a:hover { color: var(--white); }
+footer nav a:hover { color: #fff; }
 @media print {
   header.hero, footer, nav.toc, p.totop, .skip { display: none !important; }
   main { max-width: none; padding: 0; }
@@ -119,16 +120,34 @@ def reading_minutes(body):
     return max(1, round(words / 220))
 
 
-def page(rel, path, title, desc, tab, hero, body, image=None):
-    url = SITE["base"] + path
-    image = image or SITE["base"] + "assets/avatar.png"
+def topbar(rel, tab):
     on = ' class="on"'
-    tabs = "".join(f'<a href="{rel}{href}"{on if name == tab else ""}>{name}</a>'
-                   for name, href in (("Home", ""), ("Blog", "posts/")))
+    tabs = "".join(f'<a href="{rel}{href}"{on if name == tab else ""}><span class="n">{n}</span>{name}</a>'
+                   for n, name, href in (("01", "Home", ""), ("02", "Blog", "posts/")))
+    return (f'<nav class="top"><div class="wrap"><a class="brand" href="{rel}" aria-label="Dyalect home">{MARK}'
+            f'<span class="word">dyalect</span></a><div class="tabs">{tabs}</div></div></nav>')
+
+
+def site_footer(rel):
+    return f"""<footer class="site" data-theme="dark">
+<div class="wrap">
+<div class="foot">
+<div><a class="brand" href="{rel}">{MARK}<span class="word">dyalect</span></a>
+<p>Specialized models for the enterprise, and the research behind them.</p></div>
+{FOOTER_NAV.format(rel=rel)}
+</div>
+<p class="giant" aria-hidden="true">dyalect.</p>
+<div class="base mono"><span>© {datetime.date.today().year} {esc(SITE['name'])}</span><span>Posts CC BY 4.0 · code MIT</span></div>
+</div>
+</footer>"""
+
+
+def page(rel, path, title, desc, tab, hero, body, image=None, short=True):
+    url = SITE["base"] + path
+    image = image or SITE["base"] + "assets/og.jpg"
     slash = ("<script>if(!location.pathname.endsWith('/'))"
              "location.replace(location.pathname+'/'+location.search+location.hash)</script>\n" if path.endswith("/") or not path else "")
     feed = FEED_LINK.format(name=esc(SITE["name"]), href=rel + "feed.xml")
-    footer = FOOTER_NAV.format(rel=rel)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -136,13 +155,14 @@ def page(rel, path, title, desc, tab, hero, body, image=None):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">
+<meta name="theme-color" content="#000000">
 <meta property="og:url" content="{url}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{esc(SITE['name'])}">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:image" content="{image}">
-<meta name="twitter:card" content="{'summary_large_image' if 'og.jpg' in image else 'summary'}">
+<meta name="twitter:card" content="{'summary_large_image' if 'og.' in image else 'summary'}">
 {feed}
 <link rel="icon" href="{FAVICON}">
 <link rel="apple-touch-icon" href="{rel}assets/avatar.png">
@@ -150,17 +170,16 @@ def page(rel, path, title, desc, tab, hero, body, image=None):
 </head>
 <body>
 {SKIP}
-<header class="hero{'' if tab == 'Home' else ' short'}">
-{ORBS}
-<div class="hero-in">
-<nav class="top"><a class="brand" href="{rel}">{MARK}<span class="word">VEOLYN</span></a><div class="tabs">{tabs}</div></nav>
+<header class="hero{' short' if short else ''}" data-theme="dark">
+{topbar(rel, tab)}
+<div class="wrap hero-in">
 {hero}
 </div>
 </header>
-<main id="main">
+<main id="main" class="wrap">
 {body}
 </main>
-<footer><div><span>© {datetime.date.today().year} {esc(SITE['name'])}</span>{footer}</div></footer>
+{site_footer(rel)}
 </body>
 </html>
 """
@@ -172,43 +191,67 @@ def post_meta(p):
     return f"{date} · {minutes} min read" if minutes else date
 
 
+def display(title):
+    """Display titles follow the Signal rule for English headlines: lower case, closed by a full stop.
+    Names and units with digits or inner capitals (Qwen2.5, 0.8B, LoRA) keep their spelling."""
+    def word(w):
+        letters = re.sub(r"[^A-Za-z]", "", w)
+        if any(c.isdigit() for c in w) or (letters[1:] and letters[1:] != letters[1:].lower()):
+            return w
+        return w.lower()
+    title = " ".join(word(w) for w in title.strip().split())
+    return title + ("" if title[-1] in ".?!" else ".")
+
+
 def cards(rel):
     out = []
     for p in POSTS:
         href = f"{rel}{p['slug']}/"
+        # the card shows the post's signature figure (cover.jpg); og.jpg, with the title on it, is for link previews
+        art = "cover.jpg" if os.path.exists(os.path.join(HERE, p["slug"], "cover.jpg")) else "og.jpg"
         out.append(f"""<a class="post" href="{href}">
-<img src="{href}og.jpg" alt="" loading="lazy">
-<div><div class="meta"><span class="tag">{esc(p['tag'])}</span><span>{post_meta(p)}</span></div>
-<h2>{esc(p['title'])}</h2>
+<img src="{href}{art}" alt="" loading="lazy">
+<div class="body"><div class="meta"><span class="tag">{esc(p['tag'])}</span><span class="mono">{post_meta(p)}</span></div>
+<h3>{esc(display(p['title']))}</h3>
 <p>{esc(p['summary'])}</p>
-<span class="more">Read the post →</span></div>
+<span class="link more">Read the post →</span></div>
 </a>""")
     return '<div class="posts">\n' + "\n".join(out) + "\n</div>"
 
 
+def section(num, title, intro=""):
+    head = f'<div class="sec-head"><span class="mono">{num}</span><h2>{title}</h2></div>'
+    return head + (f'\n<p class="intro">{intro}</p>\n' if intro else '\n<div style="height:40px"></div>\n')
+
+
 def home():
-    hero = f"""<div class="kicker"><span class="n">{esc(SITE['name'])}</span></div>
-<h1>Specialized intelligence <span class="hl">for the enterprise.</span></h1>
-<p class="lead">General models know a little about everything. We build models that know your business: adapted to your data and tasks, measured on the checks that matter to you, and served where you need them.</p>
-<div class="cta"><a class="btn lime" href="posts/">Read our research →</a></div>"""
-    body = """<p class="label">Research</p>
-<p class="intro">Part of our work is research on what happens inside models, and how to change it directly.</p>
-""" + cards("")
-    return page("", "", SITE["name"], "Specialized intelligence for the enterprise.", "Home", hero, body)
+    hero = """<div class="eyebrow">Dyalect / research</div>
+<h1>specialized intelligence for the <span class="hl">enterprise.</span></h1>
+<p class="lead">General models know a little about everything. We build models that know your business.</p>
+<div class="cta"><a class="btn" href="posts/">Read our research →</a><a class="link" href="feed.xml">Follow via RSS</a></div>
+<div class="pillars">
+<div class="pillar"><h2><span class="marker">1</span>Adapt</h2><p>Adapted to your data and your tasks.</p></div>
+<div class="pillar"><h2><span class="marker">2</span>Measure</h2><p>Measured on the checks that matter to you.</p></div>
+<div class="pillar"><h2><span class="marker">3</span>Serve</h2><p>Served where you need them.</p></div>
+</div>"""
+    body = section("01", "research.", "Part of our work is research on what happens inside models, and how to change it directly.") + cards("")
+    return page("", "", SITE["name"], "Specialized intelligence for the enterprise.", "Home", hero, body, short=False)
 
 
 def index():
-    hero = """<div class="kicker"><span class="n">Blog</span>Veolyn AI research</div>
-<h1>Research from <span class="hl">Veolyn.</span></h1>
-<p class="lead">What we learn while building specialized models: how to train them, how to measure them, how to serve them, and what happens inside them. Every post comes with the numbers behind its claims.</p>"""
-    return page("../", "posts/", f"Blog · {SITE['name']}", "Research notes from Veolyn AI on building, measuring and understanding specialized models.",
-                "Blog", hero, cards("../"))
+    hero = """<div class="eyebrow">Blog / Dyalect research</div>
+<h1>research from <span class="hl">dyalect.</span></h1>
+<p class="lead">What we learn while building specialized models: how to train them, measure them, serve them, and what happens inside them. Every post comes with the numbers behind its claims.</p>"""
+    body = section("01", "all posts.") + cards("../")
+    return page("../", "posts/", f"Blog · {SITE['name']}", "Research notes from Dyalect on building, measuring and understanding specialized models.",
+                "Blog", hero, body)
 
 
 def not_found():
-    hero = """<div class="kicker"><span class="n">404</span>Not found</div>
-<h1>This page doesn't exist.</h1>"""
-    body = '<p class="label">Try the blog</p>\n' + cards(BASE_PATH)
+    hero = """<div class="eyebrow">404 / not found</div>
+<h1>this page doesn't <span class="hl">exist.</span></h1>
+<p class="lead">The link may be old, or the post may have moved. Everything we have published is below.</p>"""
+    body = section("01", "try the blog.") + cards(BASE_PATH)
     return page(BASE_PATH, "404.html", f"Not found · {SITE['name']}", "Page not found.", "", hero, body)
 
 

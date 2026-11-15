@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>We taught a 0.8B model to hand-write part of a neural network · Dyalect</title>
+<meta name="description" content="A frontier model discovered how to write a wake-word detector by experiment. We trained a Qwen3.5-0.8B model to run the procedure, and at 2 false alarms per 1,000 clips it caught 84% of utterances from held-out synthetic voices against Fable&#x27;s 78%.">
+<meta property="og:url" content="https://dyalect-ai.github.io/blog/teaching-a-small-model-to-write-weights/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Dyalect">
+<meta property="og:title" content="We taught a 0.8B model to hand-write part of a neural network">
+<meta property="og:description" content="A frontier model discovered how to write a wake-word detector by experiment. We trained a Qwen3.5-0.8B model to run the procedure, and at 2 false alarms per 1,000 clips it caught 84% of utterances from held-out synthetic voices against Fable’s 78%.">
+<meta property="og:image" content="https://dyalect-ai.github.io/blog/teaching-a-small-model-to-write-weights/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23000'/%3E%3Crect x='6' y='6' width='20' height='20' rx='2' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Crect x='15.5' y='9.5' width='7' height='7' fill='%23F7611D'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../assets/avatar.png">
+<style>
+  @font-face { font-family: 'Geist Variable'; font-weight: 100 900; src: url(fonts/geist-latin-wght-normal-BgDaEnEv.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Geist Variable'; font-weight: 100 900; src: url(fonts/geist-latin-ext-wght-normal-DC-KSUi6.woff2) format('woff2'); unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  
+  @font-face { font-family: 'Geist Mono Variable'; font-weight: 100 900; src: url(fonts/geist-mono-latin-wght-normal-XN7g48iV.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Geist Mono Variable'; font-weight: 100 900; src: url(fonts/geist-mono-latin-ext-wght-normal-Bwz-egvJ.woff2) format('woff2'); unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  
+
+  :root {
+    --purple: #F7611D; --purple-deep: #3B3A37; --ink: #000000; --paper: #F4F3EF; --paper-2: #E8E6E0;
+    --lime: #F7611D; --lime-ink: #1C1C1C; --white: #FFFFFF; --muted: rgba(255,255,255,.74);
+    --muted-ink: #5B5A55; --line: rgba(255,255,255,.18); --line-ink: rgba(0,0,0,.10); --rose: #C4281C;
+    --sans: 'Geist Variable', 'Noto Sans CJK SC', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'Geist Mono Variable', 'Noto Sans Mono CJK SC', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; color: var(--ink); background: var(--paper); font: 17.5px/1.72 var(--sans);
+         -webkit-font-smoothing: antialiased; counter-reset: sn; }
+  a { color: var(--purple); text-decoration: none; border-bottom: 1px solid rgba(0,0,0,.3); }
+
+  /* hero, as on the report's cover slide */
+  .hero { position: relative; overflow: hidden; color: var(--white);
+          background: radial-gradient(1100px 700px at 85% 0%, #282828 0%, transparent 60%),
+                      linear-gradient(160deg, var(--purple) 0%, var(--purple-deep) 62%, #000000 100%); }
+  .hero::before { content: ''; position: absolute; inset: 0; background: none;
+                  opacity: .18; mix-blend-mode: overlay; pointer-events: none; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; }
+  .hero-in { position: relative; max-width: 1120px; margin: 0 auto; padding: 30px 32px 64px; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 84px; }
+  .brand { display: flex; align-items: center; gap: 12px; color: var(--white); border: 0; }
+  .mark { width: 30px; height: 30px; }
+  .word { font-size: 13px; font-weight: 600; letter-spacing: .2em; }
+  .meta { font: 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; opacity: .62; }
+  .print-brand { display: none; }
+  .kicker { font: 13px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lime);
+            display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 22px; }
+  .kicker .n { padding: 3px 10px; border-radius: 2px; background: var(--lime); color: var(--ink); font-weight: 600; }
+  .hero h1 { font-weight: 500; font-size: 68px; line-height: 1.02; letter-spacing: -.04em; margin: 0; max-width: 1056px; }
+  .hero h1 .hl { color: var(--lime); }
+  .hero .lead { font-size: 21px; line-height: 1.6; color: var(--muted); max-width: 760px; margin: 26px 0 0;
+               text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  .stats { display: flex; gap: 16px; margin-top: 44px; flex-wrap: wrap; }
+  .stat { background: rgba(255,255,255,.09); border: 1px solid var(--line); border-radius: 4px; padding: 18px 22px; min-width: 220px; flex: 1; max-width: 300px; }
+  .stat b { display: block; font-size: 40px; font-weight: 500; letter-spacing: -.04em; line-height: 1.1; color: var(--lime); }
+  .stat span { font-size: 14.5px; line-height: 1.45; color: var(--muted); display: block; margin-top: 6px; }
+.stat .k { font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--lime); opacity: .78; margin: 0 0 12px; }
+  .byline { margin-top: 40px; font: 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .byline b { color: var(--white); font-weight: 600; }
+  .byline .pdf { display: inline-block; margin-left: 12px; padding: 5px 11px 4px; border-radius: 2px;
+                 border: 1px solid rgba(255,255,255,.32); color: var(--white); text-decoration: none;
+                 letter-spacing: .08em; transition: background .15s, border-color .15s; }
+  .byline .pdf:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.6); }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 56px 32px 80px; }
+  .col { max-width: 680px; position: relative; }
+  h2 { font-weight: 500; font-size: 34px; line-height: 1.15; letter-spacing: -.03em; margin: 72px 0 18px; }
+  h2 .n { display: block; width: max-content; font: 600 13px/1 var(--mono); letter-spacing: .14em; color: var(--lime);
+          background: var(--ink); padding: 6px 11px; border-radius: 2px; margin-bottom: 14px; }
+  h3 { font-weight: 600; font-size: 21px; letter-spacing: -.015em; margin: 40px 0 8px; }
+  p { margin: 0 0 18px; }
+  main p, main li, figcaption { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  main .note, main .refs li, main .cite p { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+  em { font-style: italic; }
+  code { font: 500 .84em/1.5 var(--mono); color: #000000; background: rgba(0,0,0,.07);
+         border: 1px solid rgba(0,0,0,.14); border-radius: 4px; padding: .1em .38em .08em; white-space: nowrap; }
+  code.wrap { white-space: normal; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: 1.6; }
+  code .tex { color: #A09E97; }
+  div.pattern { margin: 0 0 24px; padding: 13px 18px; background: #fff; border: 1px solid rgba(0,0,0,.16);
+                border-left: 3px solid var(--purple); border-radius: 4px; }
+  div.pattern code { font-size: 14px; color: var(--ink); background: none; border: 0; padding: 0; white-space: pre-wrap; }
+  div.pattern .pat-note { display: block; margin-top: 9px; font: 600 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-ink); }
+  .findings code { color: var(--lime); background: rgba(255,255,255,.1); }
+  figcaption code { font-size: .9em; }
+  sup { font-size: .68em; line-height: 0; vertical-align: .6em; }
+  .math { white-space: nowrap; font-feature-settings: "tnum"; }
+  pre { font: 13.5px/1.65 var(--mono); background: #fff; color: var(--ink); padding: 18px 22px 18px 20px;
+        border: 1px solid rgba(0,0,0,.16); border-left: 3px solid var(--purple); border-radius: 4px;
+        white-space: pre-wrap; margin: 0 0 22px; box-shadow: none; }
+  pre code { background: none; padding: 0; font: inherit; color: inherit; white-space: inherit; }
+  pre .ln { display: block; padding-left: calc(var(--i) * 1ch + 4ch); text-indent: -4ch; }
+  pre .c { color: #A09E97; font-style: italic; }
+  pre .k { color: var(--purple); font-weight: 600; }
+  pre .f { color: var(--purple-deep); font-weight: 600; }
+  ul { padding-left: 22px; margin: 0 0 20px; }
+  li { margin-bottom: 8px; }
+
+  .findings { background: var(--ink); color: var(--white); border-radius: 4px; padding: 24px 28px 10px; margin: 8px 0 30px;
+              box-shadow: none; }
+  .findings p:first-child { font: 600 13px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lime); margin-bottom: 12px; }
+  .findings ul { padding-left: 20px; }
+  .findings li { font-size: 16.5px; color: var(--muted); }
+  .findings li::marker { color: var(--lime); }
+  .findings b { color: var(--white); font-weight: 600; }
+
+  /* sidenotes */
+  .sn { counter-increment: sn; text-decoration: none; border-bottom: 0; color: var(--purple); }
+  .sn::after { content: var(--n, counter(sn)); font: 600 11px/0 var(--mono); vertical-align: super; color: var(--purple); margin-left: 1px; }
+  .note { float: right; clear: right; width: 290px; margin-right: -340px; margin-top: 4px; margin-bottom: 14px;
+          font-size: 13.5px; line-height: 1.5; color: var(--muted-ink); }
+  .note::before { content: var(--n, counter(sn)) "  "; font: 600 12px var(--mono); color: var(--purple); }
+  .note a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(0,0,0,.32); }
+  .note a:hover { color: var(--purple); border-bottom-color: var(--purple); }
+  .refs li[id] { scroll-margin-top: 24px; }
+  .refs li:target { background: rgba(247,97,29,.22); border-radius: 4px; }
+
+  figure { margin: 30px 0 36px; background: #fff; border: 1px solid rgba(0,0,0,.10); border-radius: 4px;
+           box-shadow: none; padding: 26px 26px 20px; }
+  figure.wide { width: min(1020px, calc(100vw - 64px)); }  /* column 680 + gap 50 + sidenotes 290 */
+  figcaption { font-size: 14px; line-height: 1.55; color: var(--muted-ink); margin-top: 16px; max-width: 760px; }
+  figcaption .fl { display: block; font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--purple); margin-bottom: 4px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  /* weight explorer */
+  #wx { font-family: var(--sans); }
+  .wx-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .wx-tab { font: 500 14px var(--sans); color: var(--ink); background: var(--paper); border: 1px solid rgba(0,0,0,.16);
+            border-radius: 2px; padding: 7px 14px 7px 8px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+  .wx-tab span { font: 600 11.5px var(--mono); background: #fff; color: var(--purple); border-radius: 2px; padding: 3px 8px; }
+  .wx-tab:hover { border-color: var(--purple); }
+  .wx-tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .wx-tab.on span { background: var(--lime); color: var(--ink); }
+  .wx-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 12px; }
+  .wx-title { font-weight: 600; font-size: 17px; }
+  .wx-note { font-size: 14px; color: var(--muted-ink); line-height: 1.5; max-width: 640px; }
+  .wx-jumps { display: flex; background: var(--paper); border-radius: 2px; padding: 3px; flex: none; }
+  .wx-jump { font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted-ink);
+             background: none; border: 0; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
+  .wx-jump:hover { color: var(--ink); background: #fff; }
+  .wx-frame { display: flex; justify-content: center; background: var(--paper); border-radius: 4px; padding: 14px; }
+  .wx-stage { position: relative; max-width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+  .wx-stage canvas { position: absolute; left: 0; top: 0; display: block; border-radius: 4px; }
+  .wx-lab { position: absolute; top: 8px; font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+            padding: 4px 9px; border-radius: 2px; pointer-events: none; white-space: nowrap; transition: opacity .15s; }
+  .wx-lab.l { left: 8px; background: var(--ink); color: #fff; }
+  .wx-lab.r { right: 8px; background: var(--lime); color: var(--ink); }
+  .wx-handle { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1.5px; background: var(--ink); cursor: ew-resize; touch-action: none; }
+  .wx-handle span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px;
+                    border-radius: 50%; background: var(--ink); color: var(--lime); display: grid; place-items: center;
+                    font-size: 17px; box-shadow: none; }
+  .wx-handle::before { content: ""; position: absolute; inset: 0 -14px; }
+  .wx-tip { position: absolute; z-index: 3; max-width: 380px; background: var(--ink); color: #FFFFFF; font-size: 12.5px; line-height: 1.45;
+            padding: 9px 12px; border-radius: 4px; pointer-events: none; box-shadow: none; }
+  .wx-tip b { color: var(--lime); font: 600 12px var(--mono); }
+  .wx-tip span { color: rgba(255,255,255,.7); }
+  .wx-stats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 12px; font: 12.5px var(--mono); color: var(--muted-ink); }
+  .wx-stats .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; }
+  .wx-stats .sw.b { background: var(--ink); } .wx-stats .sw.a { background: var(--lime); }
+  @media (max-width: 760px) {
+    .wx-head { flex-direction: column; align-items: flex-start; } .wx-frame { padding: 8px; }
+    .wx-tabs { gap: 6px; } .wx-tab { font-size: 13px; padding: 5px 11px 5px 6px; }
+  }
+
+  /* figure 1, as on the report's problem slide */
+  figure.problem { color: var(--white); border: 0; position: relative; overflow: hidden;
+                   background: radial-gradient(700px 400px at 90% 0%, #282828 0%, transparent 60%),
+                               linear-gradient(160deg, var(--purple) 0%, var(--purple-deep) 70%, #000000 100%); }
+  figure.problem figcaption { color: var(--muted); }
+  figure.problem figcaption .fl { color: var(--lime); }
+  figure.problem figcaption b { color: var(--white); }
+  .prompt { font: 14px var(--mono); color: var(--lime); margin: 2px 0 16px; }
+  .prompt span { color: var(--muted); }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .rc { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 18px 20px; box-shadow: none; }
+  .rc-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .who { font: 11.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-ink); }
+  .verdict { font: 600 12px var(--mono); padding: 4px 10px; border-radius: 2px; white-space: nowrap; }
+  .verdict.bad { background: #FCE6E3; color: var(--rose); }
+  .verdict.good { background: var(--lime); color: var(--ink); }
+  .reply { background: none; color: var(--ink); padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
+           font-size: 12.5px; line-height: 1.6;
+           white-space: pre-wrap; word-break: break-word; }
+  mark.bad { background: #FCE6E3; color: var(--rose); padding: 0 3px; border-radius: 4px; }
+  mark.ok { background: var(--lime); color: var(--ink); padding: 0 3px; border-radius: 4px; }
+
+  .pair { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 16px; align-items: baseline; font: 14px var(--mono);
+          background: var(--ink); color: var(--white); border-radius: 4px; padding: 16px 22px; margin: 0 0 22px; }
+  .pair .lab { color: var(--muted); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .pair .d { color: var(--ink); background: var(--lime); border-radius: 4px; padding: 0 8px; font-weight: 600; }
+  .pair .d.o { background: #FDC3A3; }
+  .pair .x { color: #FDC3A3; font-weight: 700; }
+
+  /* figure 8: the /zh trace */
+  .trace-wrap { display: grid; grid-template-columns: 1fr 250px; gap: 28px; }
+  .tl { font: 12.5px/1.5 var(--mono); margin-bottom: 5px; }
+  .tk { display: inline-block; white-space: pre; padding: 1px 2px; border-radius: 4px; margin: 1px 0; color: var(--muted-ink); }
+  .tk.sp { font-size: 10.5px; color: #7B7973; background: var(--paper); padding: 1px 5px; margin-right: 3px; }
+  .tk.nl { color: #A09E97; padding: 1px 4px; }
+  .tk.on { background: var(--paper-2); color: var(--purple-deep); }
+  .tk.first { background: var(--lime); color: var(--ink); font-weight: 600; }
+  .tk.cmd { outline: 1.5px solid var(--purple); font-weight: 700; color: var(--purple-deep); }
+  .tkey { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted-ink); margin-top: 14px; }
+  .sw { display: inline-block; width: 13px; height: 13px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; }
+  .sw.z { background: #fff; border: 1px solid var(--line-ink); }
+  .sw.on { background: var(--paper-2); border: 1px solid rgba(0,0,0,.3); }
+  .sw.first { background: var(--lime); }
+  .ft { border-left: 1px solid var(--line-ink); padding-left: 22px; }
+  .ft-t { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .ft-h { font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-ink); margin: 2px 0 8px; }
+  .ft-h + .ftr ~ .ft-h { margin-top: 20px; }
+  .ftr { display: grid; grid-template-columns: 74px 1fr 36px; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 5px; }
+  .ftt { font-family: var(--mono); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .ftb { background: var(--paper); border-radius: 4px; height: 10px; overflow: hidden; }
+  .ftb i { display: block; height: 100%; background: var(--purple); border-radius: 4px; }
+  .ftp { font-family: var(--mono); font-size: 12px; color: var(--muted-ink); text-align: right; }
+
+  table.lens { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.4; }
+  table.lens td { padding: 7px 8px; border-top: 1px solid var(--line-ink); vertical-align: middle; }
+  table.lens tr:first-child td { border-top: 0; }
+  table.lens td.lm { width: 190px; color: var(--ink); font-weight: 600; }
+  table.lens td.lk { width: 54px; color: var(--muted-ink); font: 12px var(--mono); }
+  table.lens tr.hl td { background: #F4F3EF; }
+  .chip { display: inline-block; font: 12.5px/1.3 var(--mono); background: var(--paper-2); color: var(--purple-deep);
+          border-radius: 4px; padding: 2px 7px; margin: 2px 4px 2px 0; white-space: nowrap; }
+
+  .refs { font-size: 14px; line-height: 1.55; color: #3B3A37; padding-left: 20px; }
+  .refs li { margin-bottom: 7px; }
+  .cite { font-size: 14.5px; line-height: 1.55; }
+  .cite pre { font-size: 13px; }
+  @media (max-width: 760px) { pre { font-size: 12px; padding: 14px 14px 14px 13px; } }
+  hr { border: 0; border-top: 1px solid var(--line-ink); margin: 64px 0 30px; }
+
+  footer { background: var(--ink); color: var(--muted); }
+  footer div { max-width: 1120px; margin: 0 auto; padding: 26px 32px; display: flex; justify-content: space-between;
+               align-items: center; font: 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+
+  @media (max-width: 1180px) {
+    .sn::after { content: none; }
+    .note { float: none; display: inline; width: auto; margin: 0; font-size: 14px; }
+    .note::before { content: " [" var(--n, counter(sn)) ": "; font: inherit; color: var(--muted-ink); }
+    .note::after { content: "]"; }
+    figure.wide { width: 100%; }
+  }
+  @media (max-width: 760px) {
+    body { font-size: 16.5px; }
+    .hero-in { padding: 24px 20px 48px; }
+    .top { margin-bottom: 52px; }
+    .hero h1 { font-size: 44px; }
+    .hero .lead { font-size: 18px; }
+    .stat { max-width: none; }
+    main { padding: 40px 20px 64px; }
+    figure { padding: 18px 16px 14px; border-radius: 4px; }
+    .duo, .trace-wrap { grid-template-columns: 1fr; }
+    figure.wide .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 0 16px; }
+    figure.wide .scroll svg { min-width: 760px; }
+    figure.wide .scroll::after { content: "scroll →"; display: block; font: 11px var(--mono); color: var(--muted-ink); margin-top: 6px; }
+    .ft { border-left: 0; padding-left: 0; }
+    h2 { font-size: 28px; }
+  }
+
+
+  .tabs { display: flex; gap: 6px; }
+  .tabs a { color: var(--white); font-size: 14.5px; font-weight: 500; padding: 6px 15px; border-radius: 2px;
+            border: 1px solid transparent; opacity: .78; transition: opacity .15s, background .15s; }
+  .tabs a:hover { opacity: 1; background: rgba(255,255,255,.08); }
+  .tabs a.on { opacity: 1; background: rgba(255,255,255,.12); border-color: var(--line); }
+  @media (max-width: 640px) { .top .word { display: none; } }
+
+
+/* build.py additions: skip link, contents, figure links, footer, print */
+.skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #000000; color: #fff; padding: 10px 16px; border-radius: 0 0 10px 0; }
+.skip:focus { left: 0; }
+:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 4px; }
+nav.toc { margin: 0 0 38px; padding: 22px 26px 18px; border: 1px solid rgba(0,0,0,.16); border-radius: 4px; background: #fff; box-shadow: none; }
+nav.toc .toc-h { margin: 0 0 10px; font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted-ink); }
+nav.toc ol { margin: 0; padding: 0; list-style: none; }
+nav.toc li { margin: 0; }
+nav.toc li.l2 + li.l2 { margin-top: 8px; }
+nav.toc a { display: grid; grid-template-columns: 2.7em 1fr; align-items: baseline; gap: 0 6px; padding: 6px 9px; margin: 0 -9px; border-bottom: 0; border-radius: 4px; color: var(--ink); text-decoration: none; font-size: 15.5px; line-height: 1.35; }
+nav.toc a:hover { background: rgba(0,0,0,.07); }
+nav.toc .n { font: 600 11px/1 var(--mono); letter-spacing: .07em; color: var(--purple); }
+nav.toc li.l3 a { font-size: 14px; color: var(--muted-ink); padding-left: 20px; }
+nav.toc li.l3 a:hover { color: var(--ink); }
+nav.toc + h2 { margin-top: 16px; }
+@media (max-width: 640px) {
+  nav.toc { padding: 18px 16px 14px; border-radius: 4px; }
+  nav.toc a { grid-template-columns: 2.3em 1fr; font-size: 14.5px; padding: 5px 7px; margin: 0 -7px; }
+  nav.toc li.l3 a { font-size: 13.5px; padding-left: 14px; }
+}
+a.figref { color: var(--purple); text-decoration: none; white-space: nowrap; border-bottom: 1px solid rgba(0,0,0,.3); }
+a.figref:hover { background: rgba(0,0,0,.08); }
+figure[id] { scroll-margin-top: 24px; }
+h2[id], h3[id] { scroll-margin-top: 24px; }
+p.totop { margin: 44px 0 0; text-align: center; }
+p.totop a { font: 600 12.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--purple); text-decoration: none; border-bottom: 0; }
+p.totop a:hover { text-decoration: underline; }
+footer nav { display: flex; gap: 18px; }
+footer nav a { color: inherit; text-decoration: none; border-bottom: 0; }
+footer nav a:hover { color: var(--white); }
+
+@media print {
+  /* --- page setup: A4, 170mm text block, same 680px-ish measure as the site --- */
+  @page { size: A4; margin: 15mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+
+  html, body { background: #fff !important; color: #000000; }
+  body { width: 180mm !important; margin: 0 !important; padding: 0 !important;
+         font-family: 'Segoe UI', Arial, sans-serif !important; }
+
+  /* the article's own 17px scale, 1:1 with its 680px design column;
+     only the two typefaces are swapped so PDF text does not garble */
+  :root { --sans: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+          --mono: Consolas, 'Courier New', monospace !important; }
+
+  p { margin-bottom: 3mm !important; }
+  h2 { margin: 9mm 0 3mm !important; }
+  h3 { margin: 6mm 0 2mm !important; }
+  .hero h1 { font-size: 42px !important; }
+  .hero .lead { font-size: 20px !important; }
+  .refs { font-size: 13.5px !important; line-height: 1.45 !important; }
+  .cite pre { font-size: 12px !important; }
+
+  /* --- screen chrome off --- */
+  .hero::before, .hero::after, .orb, nav.top, footer, p.totop, .skip, .byline .pdf { display: none !important; }
+
+  /* --- title block: scaled down from the hero, same hierarchy --- */
+  .print-brand { display: flex !important; align-items: center; gap: 3mm; margin: 0 0 9mm; }
+  .print-brand .mark { width: 8mm; height: 8mm; }
+  .print-brand span { font: 600 12px/1 'Segoe UI', Arial, sans-serif; letter-spacing: .22em; color: #000000; }
+
+  header.hero { background: none !important; color: #000000 !important; overflow: visible !important; padding: 0 !important; }
+  .hero-in { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .kicker { color: #5B5A55 !important; }
+  .kicker .n { background: none !important; color: #000000 !important; padding: 0 !important; }
+  .hero h1 { font-size: 42px; line-height: 1.08; letter-spacing: -.02em; color: #000000 !important; max-width: none; }
+  .hero h1 .hl { color: #000000 !important; }
+  .hero .lead { font-size: 18px; line-height: 1.55; color: #3B3A37 !important; max-width: none;
+                margin: 5mm 0 0; text-align: justify; hyphens: auto; }
+  .byline { font-size: 12px; color: #5B5A55 !important; border-top: 1.2pt solid #000000;
+            margin-top: 7mm; padding-top: 2.5mm; }
+  .byline b { color: #000000 !important; }
+
+  /* --- body keeps the article's own type scale (17px / 34px / 14px) --- */
+  main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .col { max-width: none !important; }
+
+  h2, h3 { break-after: avoid; page-break-after: avoid; break-inside: avoid; page-break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+
+  a { color: #000000 !important; text-decoration: none !important; border-bottom: 0 !important; }
+  a.figref, a.sn { color: #000000 !important; }
+
+  /* sidenotes become bracketed inline notes */
+  .note { float: none !important; display: inline !important; width: auto !important; margin: 0 !important;
+          font-size: 14px !important; color: #3B3A37 !important; }
+  .note::before { content: " [" var(--n) ": " !important; }
+  .note::after { content: "]" !important; }
+
+  /* --- figures --- */
+  figure, figure.wide { width: 100% !important; max-width: 100% !important; margin: 6mm 0 !important;
+                        padding: 6mm 5mm 5mm !important; box-shadow: none !important; overflow: visible !important;
+                        break-inside: avoid; page-break-inside: avoid; }
+  figure .scroll { overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+  figure.wide .scroll svg { min-width: 0 !important; width: 100% !important; height: auto !important; }
+  svg { max-width: 100% !important; height: auto !important; }
+  figcaption { max-width: none !important; }
+
+  /* --- contents --- */
+  nav.toc { border: 0 !important; box-shadow: none !important; background: #fff !important;
+            padding: 0 0 3mm !important; margin: 7mm 0 5mm !important; }
+  nav.toc a { border: 0 !important; }
+  nav.toc ol { columns: 2; column-gap: 10mm; }
+
+  /* --- code, rules, misc --- */
+  pre { box-shadow: none !important; break-inside: avoid; }
+  hr { border: 0; border-top: .6pt solid #D9D7D0; margin: 7mm 0; }
+  .findings { break-inside: avoid; }
+  div.pattern { break-inside: avoid; box-shadow: none !important; }
+
+  /* justified prose with unbreakable code spans goes left-aligned */
+  p.cite, .cite p, .refs li { text-align: left !important; hyphens: manual !important; }
+  p.cite code, .refs code { white-space: normal !important; }
+  .cite pre, .cite pre code { white-space: pre-wrap !important; overflow-wrap: anywhere !important;
+                              word-break: break-word !important; }
+  pre .ln { padding-left: 0 !important; text-indent: 0 !important; display: block; }
+  pre, pre code, code, .ln, .kicker, .byline, nav.toc .n, h2 .n, .note::before { font-family: Consolas, 'Courier New', monospace !important; }
+
+  /* --- references --- */
+  .refs { columns: 2; column-gap: 8mm; }
+  .refs li { break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Weight-writing article additions. All colors are from the Signal design system. */
+.hero .lead { max-width: 850px; }
+.hero .stats { max-width: 1040px; }
+.hero .stat { min-width: 190px; }
+.hero .stat b { font-feature-settings: "tnum"; }
+.hero .stat:first-child { background: rgba(247,97,29,.13); border-color: rgba(247,97,29,.38); }
+.hero .stat:first-child b { color: var(--lime); }
+.fig-title { font-weight: 600; font-size: 17px; margin: 0 0 5px; }
+.fig-sub { color: var(--muted-ink); font-size: 14px; line-height: 1.5; margin: 0 0 18px; }
+.legend { display:flex; flex-wrap:wrap; gap:8px 20px; margin:12px 0 0; font-size:12.5px; color:var(--muted-ink); }
+.legend span { display:inline-flex; align-items:center; gap:7px; }
+.legend i { display:inline-block; width:11px; height:11px; border-radius:3px; }
+.vis-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.rule { background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:16px; min-height:164px; }
+.rule .tag { display:inline-block; font:600 10px var(--mono); letter-spacing:.12em; text-transform:uppercase;
+             border-radius: 2px; padding:5px 9px; color:var(--purple); background:#fff; margin-bottom:11px; }
+.rule b { display:block; font-size:15px; margin-bottom:5px; }
+.rule p { text-align:left; color:var(--muted-ink); font-size:13.5px; line-height:1.5; margin:0; }
+.rule-diagram { height:42px; position:relative; margin:8px 2px 13px; }
+.rule-diagram::before { content:""; position:absolute; left:0; right:0; top:20px; height:7px; border-radius: 4px;
+                        background:linear-gradient(90deg,#E8E6E0,#F7611D); }
+.rule-diagram .own,.rule-diagram .budget { position:absolute; top:8px; width:2px; height:29px; background:var(--ink); }
+.rule-diagram .budget { background:var(--lime-ink); }
+.rule-diagram .own::after,.rule-diagram .budget::after { position:absolute; top:-10px; font:600 9px var(--mono); white-space:nowrap; }
+.rule-diagram .own::after { content:"model"; color:var(--ink); transform:translateX(-50%); }
+.rule-diagram .budget::after { content:"budget"; color:var(--lime-ink); transform:translateX(-50%); }
+.budget-ui { background:var(--paper); border-radius: 4px; padding:18px 20px 20px; margin-top:18px; }
+.budget-top { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:15px; }
+.budget-top label { font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted-ink); }
+.budget-read { font:600 18px var(--mono); color:var(--purple); text-align:right; }
+.budget-ui input[type=range] { width:100%; accent-color:var(--purple); margin:0 0 18px; }
+.metric-bars { display:flex; flex-direction:column; gap:9px; }
+.metric-row { display:grid; grid-template-columns:205px 1fr 58px; gap:10px; align-items:center; transition:order .25s; }
+.metric-name { font-size:13px; color:var(--ink); }
+.metric-track { height:18px; background:#fff; border-radius: 4px; overflow:hidden; }
+.metric-fill { height:100%; width:0; border-radius: 4px; transition:width .25s; }
+.metric-value { font:600 12px var(--mono); text-align:right; }
+.budget-note { margin:15px 0 0; font-size:13.5px; color:var(--muted-ink); text-align:left; }
+.step-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.step-card { background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:14px; min-height:180px; }
+.step-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:600; font-size:14px; }
+.step-num { width:23px; height:23px; border-radius:50%; display:grid; place-items:center; font:600 11px var(--mono);
+            color:var(--ink); background:var(--lime); }
+.step-card svg { width:100%; height:58px; display:block; margin-bottom:7px; }
+.step-card p { margin:0; text-align:left; font-size:12.5px; line-height:1.48; color:var(--muted-ink); }
+.triple { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.teach-card { background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:16px; }
+.teach-card.good { border-color:rgba(0,0,0,.55); }
+.teach-card b { font-size:14px; display:block; min-height:42px; }
+.dots { display:grid; grid-template-columns:repeat(5,22px); gap:9px; margin:12px 0 14px; }
+.dot { width:20px; height:20px; border-radius:50%; border:2px solid #C4281C; }
+.dot.on { border:0; background:var(--purple); }
+.teach-result { font-size:13.5px; font-weight:600; color:var(--rose); }
+.teach-card.good .teach-result { color:var(--purple); }
+.teach-card p { font-size:12.5px; line-height:1.5; text-align:left; color:var(--muted-ink); margin:8px 0 0; }
+.pipe { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; align-items:stretch; margin-bottom:22px; }
+.pipe-item { position:relative; background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px;
+             padding:13px 10px; text-align:center; min-height:94px; }
+.pipe-item::after { content:"→"; position:absolute; right:-17px; top:35px; color:var(--muted-ink); }
+.pipe-item:last-child::after { display:none; }
+.pipe-item:last-child { background:var(--ink); color:var(--white); }
+.pipe-item b { font-size:13px; display:block; }
+.pipe-item span { display:block; margin-top:5px; color:var(--muted-ink); font-size:11.5px; line-height:1.35; }
+.pipe-item:last-child span { color:var(--muted); }
+.turns { display:flex; flex-direction:column; gap:10px; }
+.turn { display:grid; grid-template-columns:95px 1fr; gap:13px; align-items:start; border:1px solid rgba(0,0,0,.14);
+        border-radius: 4px; padding:13px 15px; background:#fff; }
+.turn .tn { font:600 11px var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--purple); }
+.turn p { margin:0 0 8px; text-align:left; font-size:13.5px; line-height:1.45; }
+.turn pre { margin:0; padding:10px 12px; border-radius: 4px; box-shadow:none; font-size:11.5px; line-height:1.45; }
+.turn.done { background:var(--ink); color:var(--white); border:0; }
+.turn.done .tn { color:var(--lime); }
+.turn.done p { color:var(--muted); }
+.turn.done b { color:var(--white); }
+.audit-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:20px 0; }
+.audit { background:#fff; border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:15px; }
+.audit .a-k { font:600 10px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--purple); }
+.audit b { display:block; font-size:24px; margin:4px 0 5px; }
+.audit span { display:block; color:var(--muted-ink); font-size:12.5px; line-height:1.45; }
+.call { border-left:3px solid var(--lime-ink); background:#F4F3EF; border-radius:0;
+        padding:17px 20px; margin:22px 0; }
+.call b { color:var(--ink); }
+.call p { margin:0; text-align:left; font-size:15px; color:#3B3A37; }
+.repo-map { display:grid; grid-template-columns:160px 1fr; font-size:13.5px; border:1px solid rgba(0,0,0,.14);
+            border-radius: 4px; overflow:hidden; background:#fff; margin-bottom:22px; }
+.repo-map div { padding:10px 13px; border-top:1px solid var(--line-ink); }
+.repo-map div:nth-child(-n+2) { border-top:0; }
+.repo-map div:nth-child(odd) { font-family:var(--mono); color:var(--purple); background:var(--paper); }
+.chart-title { font-size:13px; font-weight:600; fill:var(--ink); }
+.chart-muted { font-size:11px; fill:var(--muted-ink); }
+.chart-lab { font-size:11.5px; fill:var(--ink); }
+.chart-tick { font-size:10.5px; fill:var(--muted-ink); }
+.only-print { display:none; }
+@media (max-width:760px) {
+  .vis-grid,.step-grid,.triple,.audit-grid { grid-template-columns:1fr; }
+  .pipe { grid-template-columns:1fr 1fr; }
+  .pipe-item::after { display:none; }
+  .metric-row { grid-template-columns:128px 1fr 48px; }
+  .metric-name { font-size:11.5px; }
+  .turn { grid-template-columns:1fr; }
+  .repo-map { grid-template-columns:110px 1fr; }
+}
+@media print {
+  .budget-ui input { display:none; }
+  .only-print { display:block; }
+}
+</style>
+<link rel="alternate" type="application/atom+xml" title="Dyalect" href="../feed.xml">
+<link rel="canonical" href="https://dyalect-ai.github.io/blog/teaching-a-small-model-to-write-weights/">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "We taught a 0.8B model to hand-write part of a neural network", "description": "A frontier model discovered how to write a wake-word detector by experiment. We trained a Qwen3.5-0.8B model to run the procedure, and at 2 false alarms per 1,000 clips it caught 84% of utterances from held-out synthetic voices against Fable’s 78%.", "datePublished": "2026-11-09", "url": "https://dyalect-ai.github.io/blog/teaching-a-small-model-to-write-weights/", "image": "https://dyalect-ai.github.io/blog/teaching-a-small-model-to-write-weights/og.jpg", "author": {"@type": "Organization", "name": "Dyalect Research"}, "publisher": {"@type": "Organization", "name": "Dyalect Research"}}</script>
+<style>
+/* build.py additions: skip link, contents, figure links, footer, print (Signal design system) */
+.skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #000; color: #fff; padding: 10px 16px; }
+.skip:focus { left: 0; }
+:focus-visible { outline: 2px solid #CF4607; outline-offset: 2px; }
+nav.toc { margin: 0 0 56px; padding: 12px 0 16px; border-top: 1px solid #000; border-bottom: 1px solid #C2C0B9; }
+nav.toc .toc-h { margin: 0 0 12px; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5B5A55; }
+nav.toc ol { margin: 0; padding: 0; list-style: none; }
+nav.toc li { margin: 0; }
+nav.toc li.l2 + li.l2 { margin-top: 4px; }
+nav.toc a { display: grid; grid-template-columns: 3em 1fr; align-items: baseline; gap: 0 4px; padding: 5px 8px; margin: 0 -8px;
+            border-bottom: 0; border-radius: 2px; color: #000; text-decoration: none; font-size: 16px; line-height: 1.35;
+            transition: background 120ms cubic-bezier(.2,0,0,1); }
+nav.toc a:hover { background: #F4F3EF; }
+nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #5B5A55; }
+nav.toc li.l3 a { font-size: 14px; color: #5B5A55; padding-left: 20px; }
+nav.toc li.l3 a:hover { color: #000; }
+nav.toc + h2 { margin-top: 16px; }
+@media (max-width: 640px) {
+  nav.toc a { grid-template-columns: 2.6em 1fr; font-size: 15px; }
+  nav.toc li.l3 a { font-size: 13.5px; padding-left: 14px; }
+}
+a.figref { color: #000; text-decoration: none; white-space: nowrap; border-bottom: 1px solid #A09E97; }
+a.figref:hover { border-bottom-color: #000; }
+figure[id] { scroll-margin-top: 24px; }
+h2[id], h3[id] { scroll-margin-top: 24px; }
+p.totop { margin: 56px 0 0; }
+p.totop a { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #000; text-decoration: none; border-bottom: 1px solid #000; }
+p.totop a:hover { border-bottom-width: 2px; }
+footer nav { display: flex; gap: 28px; }
+footer nav a { color: inherit; text-decoration: none; border-bottom: 0; }
+footer nav a:hover { color: #fff; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+<style id="signal">
+/* Dyalect / Signal design system layer (tokens v1.0): orange, black, white, warm grey.
+   Flat fills, hairlines, radius 4px at most, light display type, mono labels. */
+:root {
+  --purple: #000; --purple-deep: #3B3A37; --ink: #000; --paper: #F4F3EF; --paper-2: #E8E6E0;
+  --lime: #F7611D; --lime-ink: #B63D07; --white: #fff; --muted: #A09E97;
+  --muted-ink: #5B5A55; --line: #3B3A37; --line-ink: #D9D7D0; --rose: #C4281C;
+  --orange: #F7611D; --orange-50: #FFF3EC; --orange-100: #FEE2D2; --orange-900: #431804;
+  --g50: #F4F3EF; --g100: #E8E6E0; --g300: #C2C0B9; --g400: #A09E97; --g500: #7B7973; --g600: #5B5A55; --g700: #3B3A37; --g800: #282828;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+/* colours and components: screen and print */
+/* ---- article ---- */
+h2 { font-weight: 300; font-size: 38px; line-height: 1.12; letter-spacing: -.025em; border-top: 1px solid #000; padding-top: 14px; }
+h2 .n { display: block; width: auto; background: none; color: var(--g600); padding: 0; border-radius: 0;
+        font: 500 12px/1 var(--mono); letter-spacing: .06em; margin: 0 0 28px; }
+h3 { font-weight: 500; font-size: 20px; line-height: 1.25; letter-spacing: -.01em; margin: 48px 0 10px; }
+code { color: #000; background: var(--g100); border: 0; border-radius: 2px; }
+code .tex { color: var(--g600); }
+div.pattern { background: var(--g50); border: 0; border-left: 2px solid #000; border-radius: 0; }
+div.pattern .pat-note { font-weight: 500; letter-spacing: .06em; color: var(--g600); }
+pre { background: var(--g50); border: 0; border-left: 2px solid #000; border-radius: 0; box-shadow: none; }
+pre .c { color: var(--g600); }
+pre .k { color: #000; }
+pre .f { color: var(--g700); }
+hr { border-top: 1px solid var(--g300); }
+.sn, .sn::after, .note::before { color: #000; }
+.note { color: var(--g600); }
+.note a { border-bottom-color: var(--g400); }
+.note a:hover { color: #000; border-bottom-color: #000; }
+.refs { color: var(--g700); }
+.refs li:target { background: var(--orange-50); border-radius: 0; }
+
+.findings { background: #000; color: #fff; border-radius: 4px; box-shadow: none; padding: 28px 32px 14px; }
+.findings p:first-child { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g400); margin-bottom: 16px; }
+.findings li { color: var(--g400); }
+.findings li::marker { color: #fff; }
+.findings b { color: #fff; font-weight: 500; }
+.findings code { color: #fff; background: var(--g800); }
+
+figure { background: #fff; border: 1px solid var(--g300); border-radius: 4px; box-shadow: none; }
+figcaption { color: var(--g600); }
+figcaption .fl { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: #000; margin-bottom: 6px; }
+figcaption b { color: #000; font-weight: 500; }
+
+/* figure 1: the orange poster */
+figure.problem { background: var(--orange); color: #000; border: 0; }
+figure.problem figcaption { color: var(--orange-900); }
+figure.problem figcaption .fl, figure.problem figcaption b { color: #000; }
+.prompt { color: #000; }
+.prompt span { color: var(--orange-900); }
+.rc { background: #fff; border-radius: 2px; box-shadow: none; }
+.who { color: var(--g600); }
+.verdict { border-radius: 2px; font-weight: 500; }
+.verdict.bad, mark.bad { background: #FCE6E3; color: #C4281C; }
+.verdict.good, mark.ok { background: #000; color: #fff; }
+mark.bad, mark.ok { border-radius: 2px; }
+
+.pair { background: #000; border-radius: 4px; }
+.pair .lab { color: var(--g400); }
+.pair .d { background: var(--orange); color: #000; border-radius: 2px; font-weight: 500; }
+.pair .d.o { background: #FDC3A3; }
+.pair .x { color: #FDC3A3; }
+
+/* weight explorer */
+.wx-tab { background: #fff; border: 1px solid var(--g300); border-radius: 2px; }
+.wx-tab span { background: var(--g100); color: #000; border-radius: 2px; }
+.wx-tab:hover { border-color: #000; }
+.wx-tab.on { background: #000; color: #fff; border-color: #000; }
+.wx-tab.on span { background: var(--orange); color: #000; }
+.wx-jumps { background: var(--g100); border-radius: 2px; }
+.wx-jump { border-radius: 2px; font-weight: 500; }
+.wx-frame { background: var(--g50); border-radius: 2px; }
+.wx-lab { border-radius: 2px; font-weight: 500; }
+.wx-lab.r { background: var(--orange); color: #000; }
+.wx-handle, .wx-handle span { background: #000; }
+.wx-handle span { color: #fff; box-shadow: none; }
+.wx-tip { background: #000; border-radius: 2px; box-shadow: none; }
+.wx-tip b { color: #F98046; }
+.wx-stats .sw { border-radius: 0; }
+.wx-stats .sw.a { background: var(--orange); }
+
+/* figure 8: the /zh trace */
+.tk { border-radius: 2px; }
+.tk.on { background: var(--g100); color: #000; }
+.tk.first { background: var(--orange); color: #000; font-weight: 500; }
+.tk.cmd { outline: 1.5px solid #000; color: #000; }
+.sw { border-radius: 0; }
+.sw.on { background: var(--g100); border: 1px solid var(--g300); }
+.sw.first { background: var(--orange); }
+.ft { border-left-color: var(--g300); }
+.ftb { background: var(--g100); border-radius: 0; }
+.ftb i { background: #000; border-radius: 0; }
+table.lens td { border-top-color: var(--g100); }
+table.lens td.lm { font-weight: 500; }
+table.lens tr.hl td { background: var(--orange-50); }
+.chip { background: var(--g100); color: #000; border-radius: 2px; }
+
+@media screen {
+  /* flush left, ragged right: no rivers of space on narrow screens */
+  main p, main li, figcaption, .hero .lead { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+  main { max-width: 1296px; padding: 88px 48px 128px; }
+  h2 { margin: 104px 0 24px; }
+  figure { padding: 28px 28px 22px; }
+  body { background: #fff; color: #000; }
+  a { color: #000; border-bottom: 1px solid var(--g400); transition: border-color 120ms var(--ease); }
+  a:hover { border-bottom-color: #000; }
+  :focus-visible { outline: 2px solid #CF4607; outline-offset: 2px; border-radius: 0; }
+  [data-theme="dark"] :focus-visible { outline-color: #F98046; }
+
+  /* ---- top bar + hero ---- */
+  .wrap { width: 100%; max-width: 1296px; margin: 0 auto; padding: 0 48px; }
+  .hero { background: #000; color: #fff; }
+  .hero::before, .orb { display: none; }
+  .top { display: block; margin: 0; border-bottom: 1px solid var(--g700); }
+  .top .wrap { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #fff; border: 0; }
+  .mark { width: 24px; height: 24px; flex: none; display: block; }
+  .word { font-size: 19px; font-weight: 500; letter-spacing: -.02em; line-height: 1; text-transform: none; }
+  .tabs { display: flex; gap: 28px; }
+  .tabs a { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g400);
+            padding: 8px 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; opacity: 1; background: none; }
+  .tabs a .n { margin-right: 8px; opacity: .6; }
+  .tabs a:hover { color: #fff; background: none; }
+  .tabs a.on { color: #fff; border-bottom-color: #fff; background: none; }
+  .hero-in { max-width: 1296px; padding: 112px 48px 0; }
+  .kicker { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g400); gap: 16px; margin-bottom: 28px; }
+  .kicker .n { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid #fff; border-radius: 2px;
+               background: none; color: #fff; font-weight: 500; font-size: 11px; }
+  .hero h1 { font-weight: 300; font-size: clamp(44px, 6.4vw, 92px); line-height: 1.0; letter-spacing: -.035em; max-width: 13em; }
+  .hero h1 .hl { color: var(--orange); }
+  .hero .lead { font-size: 20px; line-height: 1.55; color: var(--g400); max-width: 46em; margin: 36px 0 0;
+                text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+  .hero .lead .math { color: #fff; }
+  .byline { margin-top: 72px; border-top: 1px solid var(--g700); padding: 16px 0 24px; font: 500 12px/1.3 var(--mono);
+            letter-spacing: .06em; color: var(--g400); }
+  .byline b { color: #fff; font-weight: 500; }
+  .byline .pdf { float: right; margin: -6px 0 0 16px; padding: 6px 10px; border: 1px solid #fff; border-radius: 2px; color: #fff;
+                 letter-spacing: .06em; transition: background 120ms var(--ease), color 120ms var(--ease); }
+  .byline .pdf:hover { background: #fff; color: #000; border-color: #fff; }
+
+  /* ---- footer (same as the rest of the site) ---- */
+  footer.site { background: #000; color: #fff; padding-top: 64px; overflow: hidden; }
+  footer.site div { max-width: none; margin: 0; padding: 0; display: block; font: inherit; letter-spacing: normal; text-transform: none; }
+  footer.site .wrap { max-width: 1296px; margin: 0 auto; padding: 0 48px; }
+  footer.site .foot { display: flex; justify-content: space-between; gap: 24px 48px; flex-wrap: wrap; align-items: flex-start; }
+  footer.site .brand .word { font-size: 17px; }
+  footer.site p { margin: 12px 0 0; font-size: 15px; line-height: 1.55; color: var(--g400); max-width: 36ch; text-align: left; }
+  footer.site nav { display: flex; gap: 12px 28px; flex-wrap: wrap; font-size: 17px; }
+  footer.site nav a { color: var(--g400); border: 0; }
+  footer.site nav a:hover { color: #fff; }
+  footer.site .giant { font-weight: 300; font-size: clamp(88px, 21vw, 300px); line-height: .78; letter-spacing: -.055em;
+                       margin: 72px 0 0; white-space: nowrap; user-select: none; color: #fff; max-width: none; }
+  footer.site .base { border-top: 1px solid var(--g700); margin-top: 40px; padding: 16px 0 24px; display: flex; justify-content: space-between;
+                      gap: 8px 24px; flex-wrap: wrap; color: var(--g400); font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+
+  @media (max-width: 1180px) { .note::before { color: var(--g600); } }
+  @media (max-width: 760px) {
+    .wrap, footer.site .wrap { padding: 0 24px; }
+    .tabs { gap: 20px; }
+    .tabs a .n { display: none; }
+    .hero-in { padding: 64px 24px 0; }
+    .hero h1 { font-size: 44px; }
+    .hero .lead { font-size: 18px; }
+    .byline { margin-top: 48px; }
+    .byline .pdf { float: none; display: block; width: max-content; margin: 14px 0 0; }
+    main { padding: 56px 24px 88px; }
+    h2 { font-size: 30px; margin-top: 80px; }
+    figure { padding: 18px 16px 14px; border-radius: 4px; }
+    footer.site .giant { margin-top: 56px; }
+  }
+}
+@media print {
+  .print-brand span { font: 500 16px/1 'Helvetica Neue', Arial, sans-serif !important; letter-spacing: -.01em !important; text-transform: none !important; color: #000 !important; }
+  .print-brand .mark { color: #000; }
+  .hero h1 { font-weight: 300 !important; letter-spacing: -.025em !important; }
+  .hero h1 .hl { color: #000 !important; }
+  .kicker .n { color: #B63D07 !important; }
+  a.figref, a.sn { color: #000 !important; }
+  figure.problem { background: #F7611D !important; color: #000 !important; }
+  figure.problem figcaption { color: #431804 !important; }
+  figure { border-radius: 2px !important; }
+  footer.site { display: none !important; }
+  figure.wide .scroll::after { content: none !important; }
+  figure.problem .rc { background: #fff !important; }
+  h2 .n { margin-bottom: 4mm !important; }
+}
+
+/* reading bar: the current section and how far through the article you are */
+.readbar { position: fixed; left: 0; right: 0; top: 0; z-index: 50; height: 44px; background: #fff; border-bottom: 1px solid var(--g300);
+           transform: translateY(-101%); transition: transform 200ms var(--ease); }
+.readbar.show { transform: none; }
+.readbar .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.readbar a { display: flex; align-items: baseline; gap: 12px; min-width: 0; color: #000; border: 0; font-size: 14px; }
+.readbar .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--g600); flex: none; }
+.readbar .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.readbar .pct { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--g600); flex: none; }
+.readbar i { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; background: #000; }
+@media (max-width: 760px) { .readbar .wrap { padding: 0 24px; } }
+@media print { .readbar { display: none !important; } }
+
+/* Weight-writing post: its own components on Signal (after the shared layer) */
+.fig-title { font-weight: 500; font-size: 17px; letter-spacing: -.01em; color: #000; }
+.fig-sub { color: var(--g600); }
+.legend i { border-radius: 0; }
+
+/* figure 1: the result on a black panel */
+figure.problem { background: #000; color: #fff; border: 0; }
+figure.problem figcaption { color: var(--g400); }
+figure.problem figcaption .fl, figure.problem figcaption b { color: #fff; }
+
+/* figure 3: the metric and the budget slider */
+.rule { background: var(--g50); border: 0; border-radius: 2px; }
+.rule .tag { font: 500 11px/1 var(--mono); letter-spacing: .06em; padding: 5px 8px; border: 1px solid #000; border-radius: 2px; color: #000; background: transparent; }
+.rule b { font-weight: 500; }
+.rule p { color: var(--g600); }
+.rule-diagram::before { top: 23px; height: 2px; border-radius: 0; background: var(--g300); }
+.rule-diagram .own { background: #000; }
+.rule-diagram .budget { background: var(--orange); }
+.rule-diagram .own::after { color: #000; font-weight: 500; }
+.rule-diagram .budget::after { color: #B63D07; font-weight: 500; }
+.budget-ui { background: var(--g50); border-radius: 2px; padding: 20px 22px 22px; }
+.budget-top label { font-weight: 500; letter-spacing: .06em; color: var(--g600); }
+.budget-read { font: 500 18px/1 var(--mono); color: #000; font-feature-settings: "tnum"; }
+.budget-ui input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin: 0; background: transparent; cursor: pointer; accent-color: #000; }
+.budget-ui input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #000; }
+.budget-ui input[type=range]::-moz-range-track { height: 2px; background: #000; }
+.budget-ui input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -8px; border-radius: 50%; background: #000; border: 3px solid var(--g50); box-shadow: 0 0 0 1px #000; }
+.budget-ui input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #000; border: 3px solid var(--g50); box-shadow: 0 0 0 1px #000; }
+.budget-ui input[type=range]:focus-visible { outline: 2px solid #CF4607; outline-offset: 4px; }
+.budget-ticks { display: flex; justify-content: space-between; margin: 2px 0 20px; padding: 0 3px; font: 500 11px/1 var(--mono); letter-spacing: .02em; color: var(--g500); }
+.budget-ticks button { font: inherit; color: inherit; background: none; border: 0; padding: 4px 0; cursor: pointer; font-feature-settings: "tnum"; }
+.budget-ticks button:hover { color: #000; }
+.budget-ticks button.pub { color: #000; text-decoration: underline; text-underline-offset: 3px; }
+.budget-ticks button.on { color: #000; font-weight: 700; }
+.metric-bars { gap: 8px; }
+.metric-row { grid-template-columns: 150px 1fr 64px; }
+.metric-name { font-size: 13.5px; color: #000; }
+.metric-track { height: 20px; background: #fff; border-radius: 0; }
+.metric-fill { display: block; border-radius: 0; transition: width 200ms var(--ease); }
+.metric-value { font-weight: 500; font-feature-settings: "tnum"; }
+.budget-note { color: var(--g600); }
+.budget-note b { color: #000; font-weight: 500; }
+
+/* figure 4: six steps */
+.step-card { background: var(--g50); border: 0; border-radius: 2px; }
+.step-head { font-weight: 500; }
+.step-num { background: #000; color: #fff; font-weight: 500; width: 20px; height: 20px; }
+.step-card p { color: var(--g600); }
+
+/* figure 6: three teaching conditions */
+.teach-card { background: var(--g50); border: 1px solid transparent; border-radius: 2px; }
+.teach-card.good { background: #fff; border-color: #000; }
+.teach-card b { font-weight: 500; }
+.dot { width: 18px; height: 18px; border: 1.5px solid #C4281C; }
+.dot.on { background: var(--orange); }
+.teach-result { color: #C4281C; font-weight: 500; }
+.teach-card.good .teach-result { color: #000; }
+.teach-card p { color: var(--g600); }
+
+/* figure 7: the pipeline */
+.pipe-item { background: var(--g50); border: 0; border-radius: 2px; }
+.pipe-item::after { color: var(--g500); }
+.pipe-item b { font-weight: 500; }
+.pipe-item span { color: var(--g600); }
+.pipe-item:last-child { background: #000; color: #fff; }
+.pipe-item:last-child span { color: var(--g400); }
+
+/* figure 8: one run */
+.turn { border: 1px solid var(--g300); border-radius: 2px; background: #fff; }
+.turn .tn { color: #000; font-weight: 500; letter-spacing: .06em; }
+.turn pre { border-radius: 0; }
+.turn.done { background: #000; border-color: #000; }
+.turn.done .tn { color: #F98046; }
+.turn.done p { color: var(--g400); }
+
+/* figure 12 badges, moved out of the plot so they cover no data */
+.fig-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.badge { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 8px 10px; border-radius: 2px; }
+.badge.dark { background: #000; color: #fff; }
+.badge.bad { background: #FCE6E3; color: #C4281C; }
+
+/* section 07 */
+.audit-grid { gap: 24px; margin: 28px 0; }
+.audit { background: none; border: 0; border-top: 1px solid #000; border-radius: 0; padding: 12px 0 0; }
+.audit .a-k { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g600); }
+.audit b { font-weight: 300; font-size: 36px; line-height: 1.1; letter-spacing: -.02em; margin: 10px 0 8px; }
+.audit span { color: var(--g600); }
+.call { border-left: 2px solid #000; background: var(--g50); border-radius: 0; }
+.call p { color: var(--g700); }
+.call b { font-weight: 500; }
+.repo-map { border: 1px solid var(--g300); border-radius: 2px; }
+.repo-map div { border-top-color: var(--g200, #D9D7D0); }
+.repo-map div:nth-child(odd) { color: #000; background: var(--g50); }
+
+/* chart text */
+.chart-title { font-weight: 500; fill: #000; }
+.chart-muted, .chart-tick { fill: var(--g600); }
+.chart-lab { fill: #000; }
+
+@media screen {
+  /* hero numbers: hairline columns, light figures */
+  .hero .lead { max-width: 46em; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-top: 64px; max-width: none; }
+  .hero .stats { max-width: none; }
+  .stat, .hero .stat, .hero .stat:first-child { background: none; border: 0; border-top: 1px solid #fff; border-radius: 0; padding: 12px 0 0;
+                                               min-width: 0; max-width: none; }
+  .stat .k { display: block; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g400); opacity: 1; margin: 0 0 18px; }
+  .stat b, .hero .stat:first-child b { font-weight: 300; font-size: 56px; line-height: 1; letter-spacing: -.035em; color: #fff; }
+  .stat span:last-child { font-size: 14px; line-height: 1.45; color: var(--g400); margin-top: 12px; }
+  .byline { margin-top: 56px; }
+}
+@media screen and (max-width: 900px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 32px; }
+}
+@media screen and (max-width: 760px) {
+  .stat b, .hero .stat:first-child b { font-size: 40px; }
+  .metric-row { grid-template-columns: 112px 1fr 52px; }
+  .budget-ticks { font-size: 10px; }
+}
+@media print {
+  .budget-ticks { display: none; }
+  .stat b { color: #000 !important; }
+}
+@media print {
+  figure.problem { background: #000 !important; color: #fff !important; }
+  figure.problem figcaption { color: #A09E97 !important; }
+  figure.problem figcaption .fl, figure.problem figcaption b { color: #fff !important; }
+  .stats { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 5mm; margin-top: 6mm; }
+  .stat { background: none !important; border: 0 !important; border-top: .6pt solid #000 !important; border-radius: 0 !important; padding: 2mm 0 0 !important; min-width: 0 !important; }
+  .stat .k { color: #5B5A55 !important; opacity: 1 !important; font-size: 9px !important; }
+  .stat b { font-size: 26px !important; font-weight: 300 !important; }
+  .stat span:last-child { color: #3B3A37 !important; font-size: 11px !important; }
+  .readbar, .budget-ticks { display: none !important; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="hero" id="top" data-theme="dark">
+<nav class="top"><div class="wrap"><a class="brand" href="../" aria-label="Dyalect home"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span class="word">dyalect</span></a><div class="tabs"><a href="../"><span class="n">01</span>Home</a><a href="../posts/" class="on"><span class="n">02</span>Blog</a></div></div></nav>
+<div class="hero-in">
+<div class="print-brand"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span>dyalect</span></div>
+<div class="kicker"><span class="n">Weight writing</span>Qwen3.5-0.8B · wake-word detectors</div>
+<h1>we taught a <span class="hl">0.8B model</span> to hand-write part of a neural network.</h1>
+<p class="lead">Could a language model hand-write part of a neural network: 129 numbers, no training allowed? Fable, a frontier model, cracked it by experimenting on the network the way a neuroscientist probes a brain. We turned its method into a procedure and taught a much smaller 0.8B model to run it. Telling the small model the method did nothing; teaching it by example worked. At 2 false alarms per 1,000 other clips, the 0.8B catches 84% of utterances from held-out synthetic voices; Fable catches 78%.</p>
+<div class="stats">
+      <div class="stat"><span class="k">Headline result</span><b>84.3%</b><span>Fine-tuned 0.8B at 2 false alarms per 1,000 clips</span></div>
+      <div class="stat"><span class="k">Fable 5.1</span><b>77.5%</b><span>One frontier-model run at that same budget</span></div>
+      <div class="stat"><span class="k">Before → after</span><b>0 → 84%</b><span>The untuned 0.8B produced no valid detector</span></div>
+      <div class="stat"><span class="k">Training</span><b>3 h</b><span>LoRA on 8 CPU cores; no GPU</span></div>
+    </div>
+<div class="byline"><b>Dyalect Research</b> · Nov 9, 2026 · 15 min read<a class="pdf" href="paper.pdf" download="dyalect_blog_we-taught-a-0-8b-model-to-hand-write-part-of-a-neural-network.pdf">PDF ↓</a></div>
+</div>
+</header>
+
+<main id="main"><article class="col">
+<nav class="toc" id="toc" aria-label="Contents">
+  <p class="toc-h">Contents</p>
+  <ol>
+    <li class="l2"><a href="#result"><span class="n">00</span><span class="t">129 numbers, no training allowed</span></a></li>
+    <li class="l2"><a href="#task"><span class="n">01</span><span class="t">Inside a wake-word detector</span></a></li>
+    <li class="l3"><a href="#metric"><span class="n"></span><span class="t">Why false alarms set the rules</span></a></li>
+    <li class="l2"><a href="#procedure"><span class="n">02</span><span class="t">Fable experiments like a neuroscientist</span></a></li>
+    <li class="l2"><a href="#teaching"><span class="n">03</span><span class="t">Telling failed. Teaching worked.</span></a></li>
+    <li class="l2"><a href="#run"><span class="n">04</span><span class="t">Watching the student work</span></a></li>
+    <li class="l2"><a href="#master"><span class="n">05</span><span class="t">The student against the master</span></a></li>
+    <li class="l2"><a href="#limits"><span class="n">06</span><span class="t">Where the method breaks</span></a></li>
+    <li class="l2"><a href="#reproduce"><span class="n">07</span><span class="t">Check every number</span></a></li>
+    <li class="l2"><a href="#closing"><span class="n">08</span><span class="t">Scientists and operators</span></a></li>
+  </ol>
+</nav>
+
+<h2 id="result"><span class="n">00</span>129 numbers, no training allowed</h2>
+<p>A phone that wakes up when you say a phrase is running a wake-word detector, a small neural network that listens constantly for its cue. Its last step is plain arithmetic: multiply 128 internal signals (activations) by 128 weights, add one number (the bias), and fire if the total is above zero.</p>
+<p>Normally those 129 numbers come from training. We asked language models to write them by hand. They could synthesize speech and probe the frozen network; gradient descent, regression, solvers and automated weight search were forbidden.</p>
+<p>The surprise is not only that a frontier model can do it, but that its discovery can become a procedure a much smaller model learns to run. On the private benchmark, the fine-tuned Qwen3.5-0.8B is the best no-training LLM writer tested at 2 false alarms per 1,000 other clips (<a class="figref" href="#figure-1">Figure 1</a>). A logistic-regression layer trained on labelled audio reaches 100%, but it breaks the no-training rule: a reference, not a competitor.</p>
+
+<figure id="figure-1" class="wide problem">
+  <div class="scroll"><svg viewBox="0 0 980 382" width="100%" role="img" aria-label="Models ranked by wake words caught within the same false-alarm budget"><line x1="270.0" x2="270.0" y1="26" y2="349" stroke="rgba(255,255,255,.18)"/><text x="270.0" y="371" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">0%</text><line x1="430.0" x2="430.0" y1="26" y2="349" stroke="rgba(255,255,255,.18)"/><text x="430.0" y="371" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">25%</text><line x1="590.0" x2="590.0" y1="26" y2="349" stroke="rgba(255,255,255,.18)"/><text x="590.0" y="371" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">50%</text><line x1="750.0" x2="750.0" y1="26" y2="349" stroke="rgba(255,255,255,.18)"/><text x="750.0" y="371" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">75%</text><line x1="910.0" x2="910.0" y1="26" y2="349" stroke="rgba(255,255,255,.18)"/><text x="910.0" y="371" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">100%</text><text x="257" y="53" text-anchor="end" font-size="13" font-weight="700" fill="#FFFFFF">Qwen3.5 0.8B, fine-tuned</text><rect x="270" y="38" width="539.52" height="22" rx="4" fill="#F7611D"/><text x="818.52" y="54" font-size="13" font-weight="650" fill="#F7611D">84.3%</text><text x="868.52" y="54" font-size="11" fill="rgba(255,255,255,.68)">5 runs</text><text x="257" y="92" text-anchor="end" font-size="13" font-weight="600" fill="#FFFFFF">Fable 5.1</text><rect x="270" y="77" width="496.0" height="22" rx="4" fill="#FFFFFF"/><text x="775.0" y="93" font-size="13" font-weight="650" fill="#FFFFFF">77.5%</text><text x="825.0" y="93" font-size="11" fill="rgba(255,255,255,.68)">1 run</text><text x="257" y="131" text-anchor="end" font-size="13" font-weight="400" fill="#FFFFFF">Kimi K3</text><rect x="270" y="116" width="453.12" height="22" rx="4" fill="#C2C0B9"/><text x="732.12" y="132" font-size="13" font-weight="650" fill="#C2C0B9">70.8%</text><text x="782.12" y="132" font-size="11" fill="rgba(255,255,255,.68)">1 run</text><text x="257" y="170" text-anchor="end" font-size="13" font-weight="400" fill="#FFFFFF">Qwen3.6 35B-A3B</text><rect x="270" y="155" width="341.12" height="22" rx="4" fill="#7B7973"/><text x="620.12" y="171" font-size="13" font-weight="650" fill="#7B7973">53.3%</text><text x="670.12" y="171" font-size="11" fill="rgba(255,255,255,.68)">1 run</text><text x="257" y="209" text-anchor="end" font-size="13" font-weight="400" fill="#FFFFFF">Qwen3.5 9B</text><path d="M272,199 L282,211 M272,211 L282,199" stroke="#FF6B5E" stroke-width="2"/><text x="291" y="209" font-size="12" fill="#FF6B5E">broken · 3 runs</text><text x="257" y="248" text-anchor="end" font-size="13" font-weight="400" fill="#FFFFFF">Qwen3.5 4B</text><path d="M272,238 L282,250 M272,250 L282,238" stroke="#FF6B5E" stroke-width="2"/><text x="291" y="248" font-size="12" fill="#FF6B5E">broken · 3 runs</text><text x="257" y="287" text-anchor="end" font-size="13" font-weight="400" fill="#FFFFFF">Qwen3.5 0.8B, method in prompt</text><path d="M272,277 L282,289 M272,289 L282,277" stroke="#FF6B5E" stroke-width="2"/><text x="291" y="287" font-size="12" fill="#FF6B5E">no valid answer · 5 runs</text><text x="257" y="326" text-anchor="end" font-size="13" font-weight="400" fill="#FFFFFF">Qwen3.5 0.8B, untuned</text><path d="M272,316 L282,328 M272,328 L282,316" stroke="#FF6B5E" stroke-width="2"/><text x="291" y="326" font-size="12" fill="#FF6B5E">no valid answer · 5 runs</text></svg></div>
+  <figcaption><span class="fl">Figure 1</span><b>Scoring the finished detector, not just its weights.</b> The score is the share of 60 utterances from held-out synthetic voices caught per phrase, averaged over “hey nova” and “alright gizmo”, with at most 2 false alarms per 1,000 of roughly 17,000 other clips. A detector that fires on more than 1% of other clips at its own threshold counts as broken. Five runs for the fine-tuned 0.8B; one each for Fable, Kimi and the 35B.</figcaption>
+</figure>
+
+<div class="findings">
+  <p>What changed</p>
+  <ul>
+    <li><b>Untuned 0.8B:</b> five runs, no working detector.</li>
+    <li><b>Same model, whole method in its prompt:</b> five runs, still no working detector.</li>
+    <li><b>After fine-tuning:</b> all ten phrase detectors worked, with an average score of 84.3%.</li>
+    <li><b>The 35B:</b> wrote good weights, then set its trigger point so strict that it caught only 35% of “hey nova”.</li>
+  </ul>
+</div>
+
+<p>One qualification. Fable ran once; the 0.8B ran five times. And at the thresholds the models chose themselves, before a common budget is enforced, Fable catches more, 93% versus 90%, but fires more often: on 0.54% of other clips versus 0.35%. At an equal budget the order reverses. We show that trade-off rather than hide it.</p>
+
+<h2 id="task"><span class="n">01</span>Inside a wake-word detector</h2>
+<p>The detector hears two seconds of audio (<a class="figref" href="#figure-2">Figure 2</a>). Frozen “ears”, based on Google’s speech embedding model, turn the sound into 16 vectors of 96 numbers. A frozen two-layer body turns those into 128 non-negative activations: 128 dials, each reacting to some pattern in the sound. Frozen means fixed. Only the final layer, which reads the dials, can be written.</p>
+
+<figure id="figure-2" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 220" width="100%" role="img" aria-label="Anatomy of the wake-word detector"><defs><marker id="arrA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#5B5A55"/></marker></defs><rect x="20" y="45" width="180" height="112" rx="4" fill="#F4F3EF" stroke="rgba(0,0,0,.16)" stroke-width="1"/><text x="110.0" y="78" text-anchor="middle" font-size="14" font-weight="650" fill="#000000">Sound</text><text x="110.0" y="108" text-anchor="middle" font-size="12.5" fill="#5B5A55">2 seconds</text><text x="110.0" y="128" text-anchor="middle" font-size="12.5" fill="#5B5A55">of audio</text><line x1="208" y1="101" x2="220" y2="101" stroke="#5B5A55" stroke-width="1.5" marker-end="url(#arrA)"/><rect x="230" y="45" width="190" height="112" rx="4" fill="#F4F3EF" stroke="rgba(0,0,0,.16)" stroke-width="1"/><text x="325.0" y="78" text-anchor="middle" font-size="14" font-weight="650" fill="#000000">Frozen ears</text><text x="325.0" y="108" text-anchor="middle" font-size="12.5" fill="#5B5A55">Google speech model</text><text x="325.0" y="128" text-anchor="middle" font-size="12.5" fill="#5B5A55">16 × 96 numbers</text><line x1="428" y1="101" x2="440" y2="101" stroke="#5B5A55" stroke-width="1.5" marker-end="url(#arrA)"/><rect x="450" y="45" width="180" height="112" rx="4" fill="#F4F3EF" stroke="rgba(0,0,0,.16)" stroke-width="1"/><text x="540.0" y="78" text-anchor="middle" font-size="14" font-weight="650" fill="#000000">Frozen body</text><text x="540.0" y="108" text-anchor="middle" font-size="12.5" fill="#5B5A55">two layers</text><text x="540.0" y="128" text-anchor="middle" font-size="12.5" fill="#5B5A55">128 units</text><line x1="638" y1="101" x2="650" y2="101" stroke="#5B5A55" stroke-width="1.5" marker-end="url(#arrA)"/><rect x="660" y="45" width="200" height="112" rx="4" fill="#F7611D" stroke="#1C1C1C" stroke-width="2"/><text x="760.0" y="78" text-anchor="middle" font-size="14" font-weight="650" fill="#000000">Write this</text><text x="760.0" y="108" text-anchor="middle" font-size="12.5" fill="#000000">128 weights</text><text x="760.0" y="128" text-anchor="middle" font-size="12.5" fill="#000000">+ 1 bias</text><line x1="868" y1="101" x2="880" y2="101" stroke="#5B5A55" stroke-width="1.5" marker-end="url(#arrA)"/><rect x="890" y="45" width="90" height="112" rx="4" fill="#F4F3EF" stroke="rgba(0,0,0,.16)" stroke-width="1"/><text x="935.0" y="78" text-anchor="middle" font-size="14" font-weight="650" fill="#000000">Fire?</text><text x="935.0" y="108" text-anchor="middle" font-size="12.5" fill="#5B5A55">score</text><text x="935.0" y="128" text-anchor="middle" font-size="12.5" fill="#5B5A55">&gt; 0</text><text x="500" y="196" text-anchor="middle" font-size="12" fill="#5B5A55">Everything before the last layer is frozen. The model writes only 129 numbers.</text></svg></div>
+  <figcaption><span class="fl">Figure 2</span><b>The task is 129 numbers.</b> One weight per internal unit, plus one bias. The “ears” and body never change. A score above zero means the wake word fired.</figcaption>
+</figure>
+
+<p>The writer must produce two such layers, for “hey nova” and “alright gizmo”. Each is tested on 60 utterances from held-out synthetic voices (computer voices kept aside for testing), plus everyday speech, noise and about 270 other wake phrases. This is perception, not a puzzle with a rulebook; what worked was running the network and measuring its units.</p>
+
+<h3 id="metric">Why false alarms set the rules</h3>
+<p>A detector that fires all the time catches every wake word and is useless. So recall, the share of real wake words caught, only counts within a false-alarm budget: here, at most 2 false alarms per 1,000 other clips.</p>
+<p>Each layer also sets a threshold, the trigger point a score must pass. A looser threshold is tightened to the budget. A stricter one is kept, so the 35B still pays for being over-cautious. If the submitted threshold fires on more than 1% of other clips, the detector is broken and scores zero.</p>
+
+<figure id="figure-3" class="wide">
+  <div class="fig-title">How the metric treats the threshold a model wrote</div>
+  <div class="fig-sub">The metric equalizes loose thresholds without rescuing over-strict ones.</div>
+  <div class="vis-grid">
+    <div class="rule"><span class="tag">Loose</span><div class="rule-diagram"><i class="own" style="left:42%"></i><i class="budget" style="left:70%"></i></div><b>Tighten to the budget</b><p>The model may catch less after false alarms are equalized.</p></div>
+    <div class="rule"><span class="tag">Already strict</span><div class="rule-diagram"><i class="own" style="left:82%"></i><i class="budget" style="left:70%"></i></div><b>Keep the model’s threshold</b><p>An over-strict threshold keeps its low catch rate.</p></div>
+    <div class="rule"><span class="tag">Broken</span><div class="rule-diagram"><i class="own" style="left:15%"></i><i class="budget" style="left:70%"></i></div><b>More than 1% → zero</b><p>This is what happens to every final 4B and 9B detector.</p></div>
+  </div>
+  <div class="budget-ui">
+    <div class="budget-top"><label for="budget-slider">Allowed false alarms</label><div class="budget-read" id="budget-read"></div></div>
+    <input id="budget-slider" type="range" min="0" max="6" step="1" value="2" aria-label="False-alarm budget">
+    <div class="budget-ticks" id="budget-ticks"><button type="button" data-i="0">0.05%</button><button type="button" data-i="1">0.10%</button><button type="button" data-i="2" class="pub">0.20%</button><button type="button" data-i="3">0.30%</button><button type="button" data-i="4">0.50%</button><button type="button" data-i="5">0.80%</button><button type="button" data-i="6">1.00%</button></div>
+    <div class="metric-bars" id="metric-bars"></div>
+    <p class="budget-note" id="budget-note"></p>
+  </div>
+  <figcaption><span class="fl">Figure 3 · interactive</span><b>The ranking depends on the budget.</b> Drag the slider or tap a budget. At the published 0.20% budget, the 0.8B leads 84.3% to 77.5%. Around 0.30%, Fable moves ahead, because its looser thresholds buy more recall. That is why every headline number has to name its false-alarm rate.</figcaption>
+</figure>
+
+<h2 id="procedure"><span class="n">02</span>Fable experiments like a neuroscientist</h2>
+<p>With only the public network’s weights to read, Fable’s layers caught 0% of both target phrases. Given a speech synthesizer and a way to run the network, it changed strategy. Like a neuroscientist with a brain in the lab, it made stimuli, recorded which units responded, and turned those measurements into a detector (<a class="figref" href="#figure-4">Figure 4</a>).</p>
+
+<figure id="figure-4" class="wide">
+  <div class="step-grid"><div class="step-card"><div class="step-head"><span class="step-num">1</span>Make stimuli</div><svg viewBox="0 0 180 58"><path d="M3 28 C18 28 18 10 30 28 S45 48 57 28 S75 9 86 28 S102 47 115 28 S135 12 150 28 S165 28 177 28" fill="none" stroke="#000000" stroke-width="2"/><path d="M3 45 C28 45 28 35 44 45 S61 54 77 45 S96 35 113 45 S145 45 177 45" fill="none" stroke="#F7611D" stroke-width="1.5"/></svg><p>Speak the target in 150 voices; add everyday speech, noise, other wake phrases and near-misses.</p></div><div class="step-card"><div class="step-head"><span class="step-num">2</span>Record units</div><svg viewBox="0 0 180 58"><rect x="8" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="18" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="28" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="38" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="48" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="58" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="68" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="78" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="88" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="98" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="108" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="118" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="128" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="138" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="148" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="158" y="5" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="8" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="18" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="28" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="38" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="48" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="58" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="68" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="78" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="88" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="98" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="108" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="118" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="128" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="138" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="148" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="158" y="15" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="8" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="18" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="28" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="38" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="48" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="58" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="68" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="78" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="88" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="98" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="108" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="118" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="128" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="138" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="148" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="158" y="25" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="8" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="18" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="28" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="38" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="48" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="58" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="68" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="78" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="88" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="98" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="108" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="118" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="128" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="138" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="148" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="158" y="35" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="8" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="18" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="28" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="38" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="48" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="58" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="68" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="78" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="88" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/><rect x="98" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.45"/><rect x="108" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.56"/><rect x="118" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.67"/><rect x="128" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.78"/><rect x="138" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.12"/><rect x="148" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.22999999999999998"/><rect x="158" y="45" width="8" height="8" rx="1" fill="#000000" fill-opacity="0.33999999999999997"/></svg><p>Run every clip through the frozen network and save all 128 activations.</p></div><div class="step-card"><div class="step-head"><span class="step-num">3</span>Find selectivity</div><svg viewBox="0 0 180 58"><line x1="5" x2="175" y1="32" y2="32" stroke="#5B5A55"/><rect x="6.0" y="14" width="3" height="18" fill="#000000"/><rect x="10.15" y="17.0" width="3" height="15.0" fill="#000000"/><rect x="14.3" y="20" width="3" height="12" fill="#000000"/><rect x="18.450000000000003" y="21.8" width="3" height="10.2" fill="#000000"/><rect x="22.6" y="24.2" width="3" height="7.800000000000001" fill="#000000"/><rect x="26.75" y="26" width="3" height="6" fill="#000000"/><rect x="30.900000000000002" y="27.2" width="3" height="4.800000000000001" fill="#000000"/><rect x="35.050000000000004" y="28.4" width="3" height="3.5999999999999996" fill="#000000"/><rect x="39.2" y="29.6" width="3" height="2.4000000000000004" fill="#000000"/><rect x="43.35" y="30.2" width="3" height="1.7999999999999998" fill="#000000"/><rect x="47.5" y="30.8" width="3" height="1.2000000000000002" fill="#000000"/><rect x="51.650000000000006" y="31.4" width="3" height="0.6000000000000001" fill="#000000"/><rect x="55.800000000000004" y="32" width="3" height="0" fill="#A09E97"/><rect x="59.95" y="32.6" width="3" height="0.6000000000000001" fill="#A09E97"/><rect x="64.10000000000001" y="33.2" width="3" height="1.2000000000000002" fill="#A09E97"/><rect x="68.25" y="33.8" width="3" height="1.7999999999999998" fill="#A09E97"/><rect x="72.4" y="35.0" width="3" height="3.0" fill="#A09E97"/><rect x="76.55000000000001" y="36.2" width="3" height="4.199999999999999" fill="#A09E97"/><rect x="80.7" y="38" width="3" height="6" fill="#A09E97"/><rect x="84.85000000000001" y="40.4" width="3" height="8.399999999999999" fill="#A09E97"/><rect x="89.0" y="42.8" width="3" height="10.8" fill="#A09E97"/><rect x="93.15" y="45.2" width="3" height="13.200000000000001" fill="#A09E97"/><rect x="97.30000000000001" y="47.0" width="3" height="15.0" fill="#A09E97"/><rect x="101.45" y="50" width="3" height="18" fill="#A09E97"/><rect x="105.60000000000001" y="14" width="3" height="18" fill="#000000"/><rect x="109.75000000000001" y="17.0" width="3" height="15.0" fill="#000000"/><rect x="113.9" y="20" width="3" height="12" fill="#000000"/><rect x="118.05000000000001" y="21.8" width="3" height="10.2" fill="#000000"/><rect x="122.20000000000002" y="24.2" width="3" height="7.800000000000001" fill="#000000"/><rect x="126.35000000000001" y="26" width="3" height="6" fill="#000000"/><rect x="130.5" y="27.2" width="3" height="4.800000000000001" fill="#000000"/><rect x="134.65" y="28.4" width="3" height="3.5999999999999996" fill="#000000"/><rect x="138.8" y="29.6" width="3" height="2.4000000000000004" fill="#000000"/><rect x="142.95000000000002" y="30.2" width="3" height="1.7999999999999998" fill="#000000"/><rect x="147.10000000000002" y="30.8" width="3" height="1.2000000000000002" fill="#000000"/><rect x="151.25" y="31.4" width="3" height="0.6000000000000001" fill="#000000"/><rect x="155.4" y="32" width="3" height="0" fill="#A09E97"/><rect x="159.55" y="32.6" width="3" height="0.6000000000000001" fill="#A09E97"/><rect x="163.70000000000002" y="33.2" width="3" height="1.2000000000000002" fill="#A09E97"/><rect x="167.85000000000002" y="33.8" width="3" height="1.7999999999999998" fill="#A09E97"/><rect x="172.0" y="35.0" width="3" height="3.0" fill="#A09E97"/><rect x="176.15" y="36.2" width="3" height="4.199999999999999" fill="#A09E97"/><rect x="180.3" y="38" width="3" height="6" fill="#A09E97"/><rect x="184.45000000000002" y="40.4" width="3" height="8.399999999999999" fill="#A09E97"/><rect x="188.60000000000002" y="42.8" width="3" height="10.8" fill="#A09E97"/><rect x="192.75000000000003" y="45.2" width="3" height="13.200000000000001" fill="#A09E97"/><rect x="196.9" y="47.0" width="3" height="15.0" fill="#A09E97"/><rect x="201.05" y="50" width="3" height="18" fill="#A09E97"/></svg><p>For each unit, measure how many standard deviations it moves for the target phrase.</p></div><div class="step-card"><div class="step-head"><span class="step-num">4</span>Write weights</div><svg viewBox="0 0 180 58"><g stroke-width="2"><line x1="25" y1="10" x2="130" y2="29" stroke="#000000" stroke-dasharray="0"/><circle cx="25" cy="10" r="4" fill="#000000"/><line x1="25" y1="19" x2="130" y2="29" stroke="#000000" stroke-dasharray="0"/><circle cx="25" cy="19" r="4" fill="#000000"/><line x1="25" y1="28" x2="130" y2="29" stroke="#000000" stroke-dasharray="0"/><circle cx="25" cy="28" r="4" fill="#000000"/><line x1="25" y1="37" x2="130" y2="29" stroke="#A09E97" stroke-dasharray="4 3"/><circle cx="25" cy="37" r="4" fill="#A09E97"/><line x1="25" y1="46" x2="130" y2="29" stroke="#A09E97" stroke-dasharray="4 3"/><circle cx="25" cy="46" r="4" fill="#A09E97"/></g><circle cx="142" cy="29" r="13" fill="none" stroke="#000000"/><text x="142" y="34" text-anchor="middle" font-size="15" fill="#000000">Σ</text></svg><p>Positive for target units, negative for anti-target units, with extra pressure on near-misses.</p></div><div class="step-card"><div class="step-head"><span class="step-num">5</span>Set threshold</div><svg viewBox="0 0 180 58"><path d="M5 49 H25 V42 H45 V35 H65 V25 H85 V15 H105 V8 H125" fill="none" stroke="#000000" stroke-width="2"/><path d="M5 49 H45 V45 H75 V40 H110 V36 H150" fill="none" stroke="#A09E97" stroke-width="2"/><line x1="99" x2="99" y1="5" y2="52" stroke="#000000" stroke-width="1.5"/></svg><p>Inspect target and negative scores. Choose a bias that limits false alarms.</p></div><div class="step-card"><div class="step-head"><span class="step-num">6</span>Know the limits</div><svg viewBox="0 0 180 58"><path d="M5 49 H80 V42 H100 V8 H150 V49 H175" fill="#000000" fill-opacity=".15" stroke="#000000" stroke-width="2"/><path d="M5 49 H85 V39 H104 V12 H145 V49 H175" fill="none" stroke="#C4281C" stroke-width="1.8" stroke-dasharray="5 4"/></svg><p>If a near-miss looks identical inside the body, say so instead of pretending it is separable.</p></div></div>
+  <figcaption><span class="fl">Figure 4</span><b>Fable’s procedure, in six steps.</b> It synthesized 1,695 clips, measured all 128 units, weighted each by how selectively it responds, and chose a threshold from score tables. No training or optimizer was used.</figcaption>
+</figure>
+
+<p>Here is the idea in miniature. Unit 42 fires strongly for “hey nova”; unit 31 usually goes quiet. A positive weight on the first and a negative weight on the second both push the detector the right way. Fable repeats that logic across all 128 units.</p>
+
+<figure id="figure-5" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 350" width="100%" role="img" aria-label="Distribution of two selective network units"><text x="55" y="22" class="chart-title">Unit 42 fires for &quot;hey nova&quot;</text><line x1="55" x2="475" y1="272.0" y2="272.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="276.0" text-anchor="end" class="chart-tick">0%</text><line x1="55" x2="475" y1="162.0" y2="162.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="166.0" text-anchor="end" class="chart-tick">50%</text><line x1="55" x2="475" y1="52.0" y2="52.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="56.0" text-anchor="end" class="chart-tick">100%</text><path d="M 55.0 272.0 L 55.0 272.0 L 90.1 272.0 L 90.1 272.0 L 125.1 272.0 L 125.1 268.3 L 160.2 268.3 L 160.2 272.0 L 195.2 272.0 L 195.2 268.3 L 230.3 268.3 L 230.3 264.7 L 265.3 264.7 L 265.3 235.3 L 300.4 235.3 L 300.4 242.7 L 335.4 242.7 L 335.4 253.7 L 370.5 253.7 L 370.5 239.0 L 405.6 239.0 L 405.6 257.3 L 439.9 257.3 L 439.9 198.7 L 475.0 198.7 L 475.0 272.0" fill="#F7611D" fill-opacity=".13" stroke="#F7611D" stroke-width="2"/><path d="M 55.0 272.0 L 55.0 111.0 L 90.1 111.0 L 90.1 249.8 L 125.1 249.8 L 125.1 256.8 L 160.2 256.8 L 160.2 263.4 L 195.2 263.4 L 195.2 266.1 L 230.3 266.1 L 230.3 268.5 L 265.3 268.5 L 265.3 270.0 L 300.4 270.0 L 300.4 270.9 L 335.4 270.9 L 335.4 271.6 L 370.5 271.6 L 370.5 271.8 L 405.6 271.8 L 405.6 272.0 L 439.9 272.0 L 439.9 272.0 L 475.0 272.0 L 475.0 272.0" fill="#A09E97" fill-opacity=".13" stroke="#A09E97" stroke-width="2"/><path d="M 55.0 272.0 L 55.0 180.7 L 90.1 180.7 L 90.1 254.4 L 125.1 254.4 L 125.1 253.7 L 160.2 253.7 L 160.2 256.2 L 195.2 256.2 L 195.2 255.1 L 230.3 255.1 L 230.3 256.8 L 265.3 256.8 L 265.3 258.4 L 300.4 258.4 L 300.4 262.1 L 335.4 262.1 L 335.4 262.8 L 370.5 262.8 L 370.5 266.1 L 405.6 266.1 L 405.6 268.7 L 439.9 268.7 L 439.9 269.1 L 475.0 269.1 L 475.0 272.0" fill="#1C1C1C" fill-opacity=".13" stroke="#1C1C1C" stroke-width="2"/><line x1="55" x2="475" y1="272" y2="272" stroke="#5B5A55"/><text x="265.0" y="299" text-anchor="middle" class="chart-muted">unit activation</text><text x="555" y="22" class="chart-title">Unit 31 goes quiet for &quot;hey nova&quot;</text><line x1="555" x2="975" y1="272.0" y2="272.0" stroke="rgba(0,0,0,.10)"/><text x="547" y="276.0" text-anchor="end" class="chart-tick">0%</text><line x1="555" x2="975" y1="162.0" y2="162.0" stroke="rgba(0,0,0,.10)"/><text x="547" y="166.0" text-anchor="end" class="chart-tick">50%</text><line x1="555" x2="975" y1="52.0" y2="52.0" stroke="rgba(0,0,0,.10)"/><text x="547" y="56.0" text-anchor="end" class="chart-tick">100%</text><path d="M 555.0 272.0 L 555.0 92.3 L 590.2 92.3 L 590.2 253.7 L 624.8 253.7 L 624.8 253.7 L 660.0 253.7 L 660.0 272.0 L 695.2 272.0 L 695.2 268.3 L 729.8 268.3 L 729.8 272.0 L 765.0 272.0 L 765.0 272.0 L 800.2 272.0 L 800.2 272.0 L 835.5 272.0 L 835.5 272.0 L 870.0 272.0 L 870.0 272.0 L 905.2 272.0 L 905.2 272.0 L 940.5 272.0 L 940.5 272.0 L 975.0 272.0 L 975.0 272.0" fill="#F7611D" fill-opacity=".13" stroke="#F7611D" stroke-width="2"/><path d="M 555.0 272.0 L 555.0 268.0 L 590.2 268.0 L 590.2 267.2 L 624.8 267.2 L 624.8 265.0 L 660.0 265.0 L 660.0 259.7 L 695.2 259.7 L 695.2 247.8 L 729.8 247.8 L 729.8 241.0 L 765.0 241.0 L 765.0 234.6 L 800.2 234.6 L 800.2 233.7 L 835.5 233.7 L 835.5 239.7 L 870.0 239.7 L 870.0 255.3 L 905.2 255.3 L 905.2 263.6 L 940.5 263.6 L 940.5 268.5 L 975.0 268.5 L 975.0 272.0" fill="#A09E97" fill-opacity=".13" stroke="#A09E97" stroke-width="2"/><path d="M 555.0 272.0 L 555.0 182.5 L 590.2 182.5 L 590.2 253.7 L 624.8 253.7 L 624.8 254.4 L 660.0 254.4 L 660.0 255.3 L 695.2 255.3 L 695.2 255.7 L 729.8 255.7 L 729.8 256.8 L 765.0 256.8 L 765.0 258.8 L 800.2 258.8 L 800.2 261.4 L 835.5 261.4 L 835.5 263.2 L 870.0 263.2 L 870.0 265.2 L 905.2 265.2 L 905.2 268.0 L 940.5 268.0 L 940.5 268.9 L 975.0 268.9 L 975.0 272.0" fill="#1C1C1C" fill-opacity=".13" stroke="#1C1C1C" stroke-width="2"/><line x1="555" x2="975" y1="272" y2="272" stroke="#5B5A55"/><text x="765.0" y="299" text-anchor="middle" class="chart-muted">unit activation</text><rect x="245" y="324" width="12" height="12" rx="3" fill="#F7611D"/><text x="263" y="334" class="chart-tick">&quot;hey nova&quot;</text><rect x="435" y="324" width="12" height="12" rx="3" fill="#A09E97"/><text x="453" y="334" class="chart-tick">speech + noise</text><rect x="625" y="324" width="12" height="12" rx="3" fill="#1C1C1C"/><text x="643" y="334" class="chart-tick">other phrases</text></svg></div>
+  <figcaption><span class="fl">Figure 5</span><b>The network already contains useful features.</b> The writer’s job is to find and combine them. Both panels share a 0–100% y axis: the share of clips in each group; private network, held-out synthetic voices.</figcaption>
+</figure>
+
+<p>That is the key difference from reading weights. Unit numbers are arbitrary: retrain the same body with a different random seed and the useful features move. Fable succeeds because it measures the network in front of it, not because it remembers that “unit 42 means nova”.</p>
+
+<h2 id="teaching"><span class="n">03</span>Telling failed. Teaching worked.</h2>
+<p>Can’t you just hand a method over? We put the full procedure and a worked example in the small model’s prompt. It failed. One run repeated the example on the example’s own phrases, then saved 128 numbers where 129 were required. Three talked until they overflowed their context, the text a model can hold at once. The method was in the prompt; the ability to run it was not.</p>
+
+<figure id="figure-6" class="wide">
+  <div class="triple">
+    <div class="teach-card"><b>Untuned Qwen3.5-0.8B</b><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="teach-result">0 of 10 working</div><p>Five runs × two phrases. No answer survived the task and shape checks.</p></div>
+    <div class="teach-card"><b>Untuned 0.8B + full method in the prompt</b><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="teach-result">0 of 10 working</div><p>The answer key changed the words it wrote, not whether it could finish the job.</p></div>
+    <div class="teach-card good"><b>Fine-tuned Qwen3.5-0.8B</b><div class="dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div><div class="teach-result">10 of 10 working · 84.3% at 2-in-1,000</div><p>Every run finished in three or four code turns, roughly five minutes on the CPU.</p></div>
+  </div>
+  <figcaption><span class="fl">Figure 6</span><b>Same model, same tools, same private network.</b> Putting the procedure in the prompt produced no working detector. Fine-tuning on executions of the procedure produced ten out of ten.</figcaption>
+</figure>
+
+<p>So we taught by example, the way an apprentice learns. We wrote Fable’s method down as a script, ran it on 20 practice networks, and recorded 320 worked episodes. Then we fine-tuned the 0.8B on them with LoRA, a cheap way to continue a model’s training by adjusting a small add-on instead of the whole model. Then it practised: it attempted 64 new tasks twice, and 52 successful attempts that followed the rules joined 120 original episodes for a shorter second round.</p>
+
+<figure id="figure-7" class="wide">
+  <div class="pipe">
+    <div class="pipe-item"><b>Fable’s method</b><span>discovered by experiment</span></div>
+    <div class="pipe-item"><b>Procedure</b><span>written as executable steps</span></div>
+    <div class="pipe-item"><b>320 examples</b><span>20 practice networks</span></div>
+    <div class="pipe-item"><b>LoRA</b><span>2.3 hours on 8 CPUs</span></div>
+    <div class="pipe-item"><b>Practice</b><span>52 student wins · 47 min</span></div>
+    <div class="pipe-item"><b>0.8B student</b><span>84.3% at 2-in-1,000</span></div>
+  </div>
+  <div class="scroll"><svg viewBox="0 0 900 340" width="100%" role="img" aria-label="Training loss over three hours"><line x1="65" x2="875" y1="230.07806711634058" y2="230.07806711634058" stroke="rgba(0,0,0,.10)"/><text x="56" y="234.07806711634058" text-anchor="end" class="chart-tick">0.01</text><line x1="65" x2="875" y1="147.28919809121513" y2="147.28919809121513" stroke="rgba(0,0,0,.10)"/><text x="56" y="151.28919809121513" text-anchor="end" class="chart-tick">0.1</text><line x1="65" x2="875" y1="64.50032906608968" y2="64.50032906608968" stroke="rgba(0,0,0,.10)"/><text x="56" y="68.50032906608968" text-anchor="end" class="chart-tick">1</text><text x="65.0" y="275" text-anchor="middle" class="chart-tick">0</text><text x="192.89473684210526" y="275" text-anchor="middle" class="chart-tick">30</text><text x="320.7894736842105" y="275" text-anchor="middle" class="chart-tick">60</text><text x="448.6842105263158" y="275" text-anchor="middle" class="chart-tick">90</text><text x="576.578947368421" y="275" text-anchor="middle" class="chart-tick">120</text><text x="704.4736842105264" y="275" text-anchor="middle" class="chart-tick">150</text><text x="832.3684210526316" y="275" text-anchor="middle" class="chart-tick">180</text><path d="M 75.2 48.3 L 124.7 87.9 L 175.8 185.8 L 227.0 211.9 L 277.7 219.0 L 328.5 222.3 L 378.3 229.4 L 426.5 225.4 L 475.5 230.8 L 521.6 231.5 L 568.9 232.3 L 615.8 230.1 L 653.7 232.7" fill="none" stroke="#F7611D" stroke-width="2.5"/><path d="M 662.7 222.1 L 707.9 190.6 L 752.6 219.3 L 797.8 228.3 L 844.7 229.7 L 854.1 228.3" fill="none" stroke="#1C1C1C" stroke-width="2.5"/><circle cx="75.23157894736842" cy="48.34849304401192" r="3.2" fill="#F7611D"/><circle cx="124.68421052631578" cy="87.8602956874337" r="3.2" fill="#F7611D"/><circle cx="175.84210526315792" cy="185.76167232219987" r="3.2" fill="#F7611D"/><circle cx="227.0" cy="211.85556744422166" r="3.2" fill="#F7611D"/><circle cx="277.73157894736846" cy="219.0225319215204" r="3.2" fill="#F7611D"/><circle cx="328.4631578947368" cy="222.34379145933778" r="3.2" fill="#F7611D"/><circle cx="378.34210526315786" cy="229.3660686227496" r="3.2" fill="#F7611D"/><circle cx="426.5157894736842" cy="225.3669788321511" r="3.2" fill="#F7611D"/><circle cx="475.54210526315785" cy="230.80445038667096" r="3.2" fill="#F7611D"/><circle cx="521.5842105263158" cy="231.54581168220471" r="3.2" fill="#F7611D"/><circle cx="568.9052631578948" cy="232.30278172509912" r="3.2" fill="#F7611D"/><circle cx="615.8" cy="230.07806711634058" r="3.2" fill="#F7611D"/><circle cx="653.7421052631579" cy="232.68732816056695" r="3.2" fill="#F7611D"/><circle cx="662.6947368421052" cy="222.0549967421934" r="3.2" fill="#1C1C1C"/><circle cx="707.8842105263159" cy="190.5777380502509" r="3.2" fill="#1C1C1C"/><circle cx="752.6473684210526" cy="219.2878818268565" r="3.2" fill="#1C1C1C"/><circle cx="797.8368421052631" cy="228.32382901090526" r="3.2" fill="#1C1C1C"/><circle cx="844.7315789473685" cy="229.72030546824075" r="3.2" fill="#1C1C1C"/><circle cx="854.1105263157895" cy="228.32382901090526" r="3.2" fill="#1C1C1C"/><line x1="658.4315789473684" x2="658.4315789473684" y1="25" y2="255" stroke="#5B5A55" stroke-dasharray="4 4"/><text x="665.4315789473684" y="38" class="chart-muted">practice round</text><text x="470.0" y="302" text-anchor="middle" class="chart-muted">minutes on 8 CPU cores</text><text x="17" y="140.0" text-anchor="middle" class="chart-muted" transform="rotate(-90 17 140.0)">loss (log scale)</text><rect x="290" y="320" width="12" height="12" rx="3" fill="#F7611D"/><text x="308" y="330" class="chart-tick">320 expert episodes</text><rect x="460" y="320" width="12" height="12" rx="3" fill="#1C1C1C"/><text x="478" y="330" class="chart-tick">52 student wins + 120 expert</text></svg></div>
+  <figcaption><span class="fl">Figure 7</span><b>Teaching the procedure, not the two benchmark phrases.</b> The benchmark networks and both target phrases never appeared in training. LoRA updated about 43 million parameters, rank 64 on every linear layer, in bfloat16 on eight Intel CPU cores.</figcaption>
+</figure>
+
+<div class="call"><p><b>The procedure itself was tuned.</b> Before freezing it, we made roughly 36 labelled variant comparisons on four design networks and confirmed the recipe on two more. Two of the six later “validation” networks had appeared during design, though their validation phrases had not. The benchmark networks and both benchmark phrases stayed untouched.</p></div>
+
+<p>The 0.8B did not invent Fable’s method. Every benchmark code block matches one of the taught templates; only the measured numbers differ. Still, what looked like frontier-model judgment was, in this setting, a procedure that a much smaller model could learn to run reliably.</p>
+
+<h2 id="run"><span class="n">04</span>Watching the student work</h2>
+<p>After fine-tuning, a complete run is short: about 1,600 generated tokens, three code turns and five minutes of CPU time. And the first unit it finds for “hey nova” is unit 42, the same one Fable found.</p>
+
+<figure id="figure-8" class="wide">
+  <div class="turns">
+    <div class="turn"><div class="tn">Turn 1</div><div><p><b>Make the experiment.</b> Synthesize targets, near-misses, speech, noise and other wake phrases; record the 128 activations.</p><pre><code>pos = acts(kws.synthesize("hey nova", n=180))
+speech = acts(kws.random_speech(n=400))
+near = acts(synthesize_near_misses(...))</code></pre></div></div>
+    <div class="turn"><div class="tn">Turn 2</div><div><p><b>Write and check the layer.</b> Compute per-unit selectivity, add the near-miss penalty, set the threshold from negative scores and test held-out clips.</p><pre><code>d_all  = (target.mean(0) - negatives.mean(0)) / sd
+d_hard = (target.mean(0) - near_misses.mean(0)) / sd
+w = normalize(d_all + 0.5 * d_hard)
+bias = -percentile(negative_scores, 99.4)</code></pre></div></div>
+    <div class="turn"><div class="tn">Turn 3</div><div><p><b>Save two 129-number layers and a forecast.</b> The model predicts “hey nova” will catch 91–100% at its own threshold and “alright gizmo” 75–85%.</p><pre><code>kws.save_answer(phrase, np.append(w, bias))
+write_method_and_forecast(...)</code></pre></div></div>
+    <div class="turn done"><div class="tn">Hidden test</div><div><p>Within the budget of 2 false alarms per 1,000 other clips: <b>“hey nova” catches 93.3%</b>; <b>“alright gizmo” catches 81.7%</b>. Both thresholds are tightened because the model’s choices fire on 0.40% and 0.32% of other clips.</p></div></div>
+  </div>
+  <figcaption><span class="fl">Figure 8</span><b>One complete benchmark run, abridged.</b> The model writes executable code, sees only the sandbox output, and never sees the hidden evaluation. The full transcript and executed code are in the repository.</figcaption>
+</figure>
+
+<h2 id="master"><span class="n">05</span>The student against the master</h2>
+<p>We test three frozen bodies. <b>Private A</b> was trained by us on 121 wake phrases and never published. <b>Retrained B</b> uses the same recipe and data with a new random seed, so equally useful units appear in different places. <b>Public P</b> is the body from openWakeWord’s official “hey jarvis” model.</p>
+<p>On the private benchmark, at 2 false alarms per 1,000 other clips, the student beats Fable: 84.3% against 77.5%. That does not make the 0.8B a better general reasoner. At the same budget on the retrained network, Fable leads, 85.8% to 83.5%. On the public body both fail, and Fable fails less badly (<a class="figref" href="#figure-9">Figure 9</a>).</p>
+
+<figure id="figure-9" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 400" width="100%" role="img" aria-label="Wake words caught by network"><line x1="55" x2="975" y1="318.0" y2="318.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="322.0" text-anchor="end" class="chart-tick">0%</text><line x1="55" x2="975" y1="247.0" y2="247.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="251.0" text-anchor="end" class="chart-tick">25%</text><line x1="55" x2="975" y1="176.0" y2="176.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="180.0" text-anchor="end" class="chart-tick">50%</text><line x1="55" x2="975" y1="105.0" y2="105.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="109.0" text-anchor="end" class="chart-tick">75%</text><line x1="55" x2="975" y1="34.0" y2="34.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="38.0" text-anchor="end" class="chart-tick">100%</text><rect x="127.83333333333334" y="78.58800000000001" width="35" height="239.41199999999998" rx="3" fill="#F7611D"/><text x="145.33333333333334" y="72.58800000000001" text-anchor="middle" class="chart-tick">84.3%</text><rect x="169.83333333333334" y="97.89999999999999" width="35" height="220.10000000000002" rx="3" fill="#1C1C1C"/><text x="187.33333333333334" y="91.89999999999999" text-anchor="middle" class="chart-tick">77.5%</text><rect x="211.83333333333334" y="83.70000000000002" width="35" height="234.29999999999998" rx="3" fill="#C2C0B9"/><text x="229.33333333333334" y="77.70000000000002" text-anchor="middle" class="chart-tick">82.5%</text><rect x="253.83333333333334" y="34.0" width="35" height="284.0" rx="3" fill="#7B7973"/><text x="271.33333333333337" y="52" text-anchor="middle" class="chart-tick" style="fill:#fff">100%</text><text x="208.33333333333334" y="342" text-anchor="middle" class="chart-lab">Private network</text><rect x="434.5" y="80.86000000000001" width="35" height="237.14" rx="3" fill="#F7611D"/><text x="452.0" y="74.86000000000001" text-anchor="middle" class="chart-tick">83.5%</text><rect x="476.5" y="74.328" width="35" height="243.672" rx="3" fill="#1C1C1C"/><text x="494.0" y="68.328" text-anchor="middle" class="chart-tick">85.8%</text><rect x="518.5" y="92.22" width="35" height="225.78" rx="3" fill="#C2C0B9"/><text x="536.0" y="86.22" text-anchor="middle" class="chart-tick">79.5%</text><rect x="560.5" y="36.272000000000006" width="35" height="281.728" rx="3" fill="#7B7973"/><text x="578.0" y="52" text-anchor="middle" class="chart-tick" style="fill:#fff">99.2%</text><text x="515.0" y="342" text-anchor="middle" class="chart-lab">Retrained network</text><rect x="741.1666666666667" y="315.728" width="35" height="2.2719999999999914" rx="3" fill="#F7611D"/><text x="758.6666666666667" y="309.728" text-anchor="middle" class="chart-tick">0.8%</text><rect x="783.1666666666667" y="270.572" width="35" height="47.428" rx="3" fill="#1C1C1C"/><text x="800.6666666666667" y="264.572" text-anchor="middle" class="chart-tick">16.7%</text><rect x="825.1666666666667" y="312.888" width="35" height="5.112000000000023" rx="3" fill="#C2C0B9"/><text x="842.6666666666667" y="306.888" text-anchor="middle" class="chart-tick">1.8%</text><rect x="867.1666666666667" y="121.47199999999998" width="35" height="196.52800000000002" rx="3" fill="#7B7973"/><text x="884.6666666666667" y="115.47199999999998" text-anchor="middle" class="chart-tick">69.2%</text><text x="821.6666666666667" y="342" text-anchor="middle" class="chart-lab">Public “hey jarvis”</text><text x="821.6666666666667" y="356" text-anchor="middle" class="chart-lab">network</text><rect x="110" y="378" width="12" height="12" rx="3" fill="#F7611D"/><text x="128" y="388" class="chart-tick">0.8B fine-tuned</text><rect x="325" y="378" width="12" height="12" rx="3" fill="#1C1C1C"/><text x="343" y="388" class="chart-tick">Fable 5.1</text><rect x="540" y="378" width="12" height="12" rx="3" fill="#C2C0B9"/><text x="558" y="388" class="chart-tick">Procedure as script</text><rect x="755" y="378" width="12" height="12" rx="3" fill="#7B7973"/><text x="773" y="388" class="chart-tick">Trained layer</text></svg></div>
+  <figcaption><span class="fl">Figure 9</span><b>Generalization follows the procedure’s assumptions.</b> Every value uses the budget of 2 false alarms per 1,000 other clips. The public body only learned “hey jarvis or not”; a newly trained layer reaches 69%, but the hand-written procedure cannot recover most of that information.</figcaption>
+</figure>
+
+<p>Still, the student’s weights look strikingly like its master’s. For “hey nova” on the private network, their 128 weights correlate at <span class="math">r = 0.90</span>, where 1.0 would be a perfect match. The student’s five runs agree with each other at <span class="math">r = 0.98</span>.</p>
+
+<figure id="figure-10" class="wide">
+  <div class="scroll"><svg viewBox="0 0 600 500" width="100%" role="img" aria-label="Fine-tuned 0.8B weights compared with Fable weights"><line x1="62" x2="575" y1="428.2857142857143" y2="428.2857142857143" stroke="rgba(0,0,0,.10)"/><line x1="74.21428571428572" x2="74.21428571428572" y1="30" y2="438" stroke="rgba(0,0,0,.10)"/><text x="54" y="432.2857142857143" text-anchor="end" class="chart-tick">-1</text><text x="74.21428571428572" y="458" text-anchor="middle" class="chart-tick">-1</text><line x1="62" x2="575" y1="331.1428571428571" y2="331.1428571428571" stroke="rgba(0,0,0,.10)"/><line x1="196.35714285714286" x2="196.35714285714286" y1="30" y2="438" stroke="rgba(0,0,0,.10)"/><text x="54" y="335.1428571428571" text-anchor="end" class="chart-tick">-0.5</text><text x="196.35714285714286" y="458" text-anchor="middle" class="chart-tick">-0.5</text><line x1="62" x2="575" y1="234.0" y2="234.0" stroke="rgba(0,0,0,.10)"/><line x1="318.5" x2="318.5" y1="30" y2="438" stroke="rgba(0,0,0,.10)"/><text x="54" y="238.0" text-anchor="end" class="chart-tick">0</text><text x="318.5" y="458" text-anchor="middle" class="chart-tick">0</text><line x1="62" x2="575" y1="136.85714285714283" y2="136.85714285714283" stroke="rgba(0,0,0,.10)"/><line x1="440.64285714285717" x2="440.64285714285717" y1="30" y2="438" stroke="rgba(0,0,0,.10)"/><text x="54" y="140.85714285714283" text-anchor="end" class="chart-tick">0.5</text><text x="440.64285714285717" y="458" text-anchor="middle" class="chart-tick">0.5</text><line x1="62" x2="575" y1="39.71428571428578" y2="39.71428571428578" stroke="rgba(0,0,0,.10)"/><line x1="562.7857142857142" x2="562.7857142857142" y1="30" y2="438" stroke="rgba(0,0,0,.10)"/><text x="54" y="43.71428571428578" text-anchor="end" class="chart-tick">1</text><text x="562.7857142857142" y="458" text-anchor="middle" class="chart-tick">1</text><line x1="74.21428571428572" x2="562.7857142857142" y1="428.2857142857143" y2="39.71428571428578" stroke="#5B5A55" stroke-dasharray="4 4"/><circle cx="267.9328571428572" cy="283.93142857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="402.7785714285714" cy="168.71999999999997" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="343.66142857142853" cy="216.32" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="360.5171428571428" cy="240.79999999999998" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="478.50714285714287" cy="155.7028571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="283.1542857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="335.35571428571427" cy="228.17142857142855" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="229.5314285714286" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="254.7885714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="248.18285714285713" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="394.22857142857146" cy="255.56571428571428" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="343.66142857142853" cy="201.16571428571427" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="230.11428571428573" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="251.07714285714286" cy="271.4971428571429" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="234.2214285714286" cy="330.36571428571426" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="293.3385714285714" cy="242.93714285714287" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="175.34857142857146" cy="359.50857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="251.07714285714286" cy="233.22285714285715" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="99.3757142857143" cy="383.21142857142854" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="183.65428571428572" cy="295.78285714285715" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="402.7785714285714" cy="200.77714285714288" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="234.2214285714286" cy="267.80571428571426" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="276.48285714285714" cy="282.37714285714287" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="251.07714285714286" cy="253.04" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="318.5" cy="210.6857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="326.8057142857143" cy="248.37714285714284" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="326.8057142857143" cy="203.69142857142856" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="196.1142857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="200.51000000000002" cy="281.6" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="394.22857142857146" cy="226.8114285714286" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="326.8057142857143" cy="224.28571428571428" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="99.3757142857143" cy="339.4971428571429" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="360.5171428571428" cy="252.06857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="287.81714285714287" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="183.65428571428572" cy="270.9142857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="310.74285714285713" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="166.79857142857145" cy="349.4057142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="192.20428571428573" cy="344.9371428571428" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="175.34857142857146" cy="306.2742857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="335.35571428571427" cy="203.30285714285716" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="290.1485714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="385.92285714285714" cy="205.82857142857145" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="562.7857142857142" cy="58.36571428571426" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="360.5171428571428" cy="203.49714285714285" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="461.6514285714286" cy="156.67428571428576" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="295.2" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="343.66142857142853" cy="232.05714285714288" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="545.9300000000001" cy="39.71428571428578" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="326.8057142857143" cy="210.4914285714286" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="315.9885714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="149.94285714285718" cy="362.42285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="267.9328571428572" cy="261.39428571428573" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="192.20428571428573" cy="274.0228571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="220.98285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="241.38285714285715" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="293.3385714285714" cy="239.82857142857142" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="194.75428571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="238.27428571428572" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="245.46285714285713" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="277.52" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="243.13142857142856" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="251.07714285714286" cy="228.94857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="183.65428571428572" cy="294.81142857142856" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="293.3385714285714" cy="239.6342857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="343.66142857142853" cy="206.8" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="360.5171428571428" cy="219.2342857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="224.8685714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="234.2214285714286" cy="237.30285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="228.56" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="369.06714285714287" cy="192.03428571428572" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="245.26857142857145" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="251.07714285714286" cy="265.86285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="310.1942857142857" cy="268.0" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="234.2214285714286" cy="285.68" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="360.5171428571428" cy="253.42857142857142" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="192.42285714285717" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="335.35571428571427" cy="228.94857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="230.89142857142858" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="217.3657142857143" cy="261.2" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="211.26857142857142" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="175.34857142857146" cy="298.5028571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="225.64571428571432" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="377.37285714285713" cy="170.27428571428572" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="512.2185714285713" cy="84.59428571428572" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="377.37285714285713" cy="146.7657142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="225.45142857142858" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="310.1942857142857" cy="226.42285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="276.48285714285714" cy="255.37142857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="318.5" cy="274.60571428571427" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="246.82285714285717" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="554.48" cy="110.62857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="267.9328571428572" cy="255.17714285714285" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="280.8228571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="245.46285714285713" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="444.7957142857143" cy="153.37142857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="411.0842857142857" cy="187.56571428571428" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="545.9300000000001" cy="100.91428571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="411.0842857142857" cy="163.4742857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="192.20428571428573" cy="262.56" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="166.79857142857145" cy="319.8742857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="248.18285714285713" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="444.7957142857143" cy="174.7428571428572" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="301.64428571428573" cy="226.2285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="284.78857142857146" cy="314.8228571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="225.9157142857143" cy="273.44" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="258.8685714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="310.1942857142857" cy="205.05142857142854" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="394.22857142857146" cy="195.33714285714282" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="225.9157142857143" cy="272.08" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="124.78142857142856" cy="332.5028571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="245.26857142857145" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="260.6171428571429" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="183.65428571428572" cy="268.5828571428571" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="352.2114285714286" cy="219.04000000000002" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="537.6242857142857" cy="170.08000000000004" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="267.9328571428572" cy="269.36" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="200.51000000000002" cy="296.36571428571426" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="385.92285714285714" cy="153.76" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="478.50714285714287" cy="169.30285714285714" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="343.66142857142853" cy="223.50857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="335.35571428571427" cy="236.9142857142857" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="310.1942857142857" cy="231.66857142857145" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="259.62714285714287" cy="228.94857142857143" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="293.3385714285714" cy="244.10285714285715" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="242.77142857142854" cy="279.8514285714285" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="99.3757142857143" cy="364.1714285714286" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="310.1942857142857" cy="243.51999999999998" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="436.49" cy="166.38857142857142" r="3.6" fill="#F7611D" fill-opacity=".56"/><circle cx="562.7857142857142" cy="58.36571428571426" r="7" fill="none" stroke="#000000" stroke-width="1.5"/><text x="548" y="30" text-anchor="end" class="chart-lab">unit 42</text><circle cx="99.3757142857143" cy="339.4971428571429" r="7" fill="none" stroke="#000000" stroke-width="1.5"/><text x="109.3757142857143" y="357.4971428571429" text-anchor="start" class="chart-lab">unit 31</text><text x="92" y="78" font-size="22" font-weight="300" fill="#000" letter-spacing="-0.5">r = 0.90</text><text x="318.5" y="488" text-anchor="middle" class="chart-muted">Fable weight for each unit</text><text x="17" y="234.0" text-anchor="middle" class="chart-muted" transform="rotate(-90 17 234.0)">0.8B weight for the same unit</text></svg></div>
+  <figcaption><span class="fl">Figure 10</span><b>The student learned the same measurement-to-weight map.</b> Each dot is one internal unit. Unit 42 gets a large positive weight from both writers; unit 31 a large negative one. Run 1, “hey nova”, private network.</figcaption>
+</figure>
+
+<p>So where does the 6.8-point edge come from? Fable improvised its method once. We refined it on practice networks, then trained the 0.8B to run the refined version consistently. Run as a plain script at the same budget, the refined procedure scores 82.5%, close to the student’s 84.3%. The edge is a procedure edge, not evidence that the 0.8B is cleverer than Fable.</p>
+
+<figure id="figure-11" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 350" width="100%" role="img" aria-label="Hidden-test scores before and after tightening the detector threshold"><line x1="65" x2="975" y1="290.0" y2="290.0" stroke="rgba(0,0,0,.10)"/><text x="56" y="294.0" text-anchor="end" class="chart-tick">0%</text><line x1="65" x2="975" y1="208.33333333333334" y2="208.33333333333334" stroke="rgba(0,0,0,.10)"/><text x="56" y="212.33333333333334" text-anchor="end" class="chart-tick">10%</text><line x1="65" x2="975" y1="126.66666666666667" y2="126.66666666666667" stroke="rgba(0,0,0,.10)"/><text x="56" y="130.66666666666669" text-anchor="end" class="chart-tick">20%</text><line x1="65" x2="975" y1="45.0" y2="45.0" stroke="rgba(0,0,0,.10)"/><text x="56" y="49.0" text-anchor="end" class="chart-tick">30%</text><path d="M 65.0 290.0 L 65.0 290.0 L 93.4 290.0 L 93.4 288.1 L 121.9 288.1 L 121.9 282.8 L 150.3 282.8 L 150.3 238.6 L 178.8 238.6 L 178.8 164.5 L 207.2 164.5 L 207.2 126.7 L 235.6 126.7 L 235.6 136.0 L 264.1 136.0 L 264.1 172.2 L 292.5 172.2 L 292.5 213.6 L 320.9 213.6 L 320.9 240.3 L 349.4 240.3 L 349.4 261.1 L 377.8 261.1 L 377.8 273.5 L 406.2 273.5 L 406.2 280.0 L 434.7 280.0 L 434.7 284.1 L 463.1 284.1 L 463.1 286.7 L 491.6 286.7 L 491.6 287.5 L 520.0 287.5 L 520.0 289.4 L 548.4 289.4 L 548.4 289.3 L 576.9 289.3 L 576.9 289.4 L 605.3 289.4 L 605.3 289.8 L 633.8 289.8 L 633.8 289.8 L 662.2 289.8 L 662.2 289.8 L 690.6 289.8 L 690.6 290.0 L 719.1 290.0 L 719.1 290.0 L 747.5 290.0 L 747.5 290.0 L 775.9 290.0 L 775.9 290.0 L 804.4 290.0 L 804.4 290.0 L 832.8 290.0 L 832.8 290.0 L 861.2 290.0 L 861.2 290.0 L 889.7 290.0 L 889.7 290.0 L 918.1 290.0 L 918.1 290.0 L 946.6 290.0 L 946.6 290.0 L 975.0 290.0 L 975.0 290.0" fill="#A09E97" fill-opacity=".15" stroke="#A09E97" stroke-width="2"/><path d="M 65.0 290.0 L 65.0 290.0 L 93.4 290.0 L 93.4 289.9 L 121.9 289.9 L 121.9 289.3 L 150.3 289.3 L 150.3 288.4 L 178.8 288.4 L 178.8 281.4 L 207.2 281.4 L 207.2 269.7 L 235.6 269.7 L 235.6 249.8 L 264.1 249.8 L 264.1 236.3 L 292.5 236.3 L 292.5 221.8 L 320.9 221.8 L 320.9 210.8 L 349.4 210.8 L 349.4 208.3 L 377.8 208.3 L 377.8 209.5 L 406.2 209.5 L 406.2 215.9 L 434.7 215.9 L 434.7 223.4 L 463.1 223.4 L 463.1 234.5 L 491.6 234.5 L 491.6 241.2 L 520.0 241.2 L 520.0 249.7 L 548.4 249.7 L 548.4 260.0 L 576.9 260.0 L 576.9 268.8 L 605.3 268.8 L 605.3 272.5 L 633.8 272.5 L 633.8 277.5 L 662.2 277.5 L 662.2 283.9 L 690.6 283.9 L 690.6 285.6 L 719.1 285.6 L 719.1 287.6 L 747.5 287.6 L 747.5 288.1 L 775.9 288.1 L 775.9 289.4 L 804.4 289.4 L 804.4 289.8 L 832.8 289.8 L 832.8 290.0 L 861.2 290.0 L 861.2 290.0 L 889.7 290.0 L 889.7 290.0 L 918.1 290.0 L 918.1 290.0 L 946.6 290.0 L 946.6 290.0 L 975.0 290.0 L 975.0 290.0" fill="#1C1C1C" fill-opacity=".15" stroke="#1C1C1C" stroke-width="2"/><path d="M 65.0 290.0 L 65.0 290.0 L 93.4 290.0 L 93.4 290.0 L 121.9 290.0 L 121.9 290.0 L 150.3 290.0 L 150.3 290.0 L 178.8 290.0 L 178.8 290.0 L 207.2 290.0 L 207.2 290.0 L 235.6 290.0 L 235.6 290.0 L 264.1 290.0 L 264.1 290.0 L 292.5 290.0 L 292.5 290.0 L 320.9 290.0 L 320.9 290.0 L 349.4 290.0 L 349.4 290.0 L 377.8 290.0 L 377.8 290.0 L 406.2 290.0 L 406.2 290.0 L 434.7 290.0 L 434.7 290.0 L 463.1 290.0 L 463.1 290.0 L 491.6 290.0 L 491.6 290.0 L 520.0 290.0 L 520.0 290.0 L 548.4 290.0 L 548.4 290.0 L 576.9 290.0 L 576.9 290.0 L 605.3 290.0 L 605.3 290.0 L 633.8 290.0 L 633.8 290.0 L 662.2 290.0 L 662.2 290.0 L 690.6 290.0 L 690.6 249.2 L 719.1 249.2 L 719.1 276.4 L 747.5 276.4 L 747.5 222.0 L 775.9 222.0 L 775.9 194.7 L 804.4 194.7 L 804.4 140.3 L 832.8 140.3 L 832.8 208.3 L 861.2 208.3 L 861.2 85.8 L 889.7 85.8 L 889.7 181.1 L 918.1 181.1 L 918.1 235.5 L 946.6 235.5 L 946.6 290.0 L 975.0 290.0 L 975.0 290.0" fill="#F7611D" fill-opacity=".15" stroke="#F7611D" stroke-width="2"/><line x1="719.0625" x2="719.0625" y1="31" y2="290" stroke="#5B5A55" stroke-width="1.3" stroke-dasharray="4 4"/><text x="712.0625" y="26" text-anchor="end" class="chart-muted">threshold it chose · 0.40% false alarms</text><line x1="748.7796875" x2="748.7796875" y1="31" y2="290" stroke="#000000" stroke-width="1.7"/><text x="755.7796875" y="26" class="chart-lab">tightened to budget · 0.20%</text><text x="861.25" y="77.83333333333331" text-anchor="middle" fill="#F7611D" font-size="12">56 of 60 caught</text><text x="520.0" y="310" text-anchor="middle" class="chart-muted">detector score →</text><text x="18" y="167.5" text-anchor="middle" class="chart-muted" transform="rotate(-90 18 167.5)">% of clips</text><rect x="240" y="330" width="12" height="12" rx="3" fill="#F7611D"/><text x="258" y="340" class="chart-tick">&quot;hey nova&quot;</text><rect x="430" y="330" width="12" height="12" rx="3" fill="#A09E97"/><text x="448" y="340" class="chart-tick">speech + noise</text><rect x="620" y="330" width="12" height="12" rx="3" fill="#1C1C1C"/><text x="638" y="340" class="chart-tick">other wake phrases</text></svg></div>
+  <figcaption><span class="fl">Figure 11</span><b>What tightening a threshold actually does.</b> The first run’s “hey nova” detector catches 57 of 60 at its own threshold, but fires on 0.40% of other clips. Tightening to the 0.20% budget catches 56 of 60. None of 6,124 speech/noise windows fire; the remaining false alarms are sound-alike wake phrases, especially “hey meadow”.</figcaption>
+</figure>
+
+<h2 id="limits"><span class="n">06</span>Where the method breaks</h2>
+<p>Before scoring, the student also forecasts how its detector will do. All 30 <em>catch-rate</em> forecasts land within five points of what the detector later catches at its own threshold. But four <em>false-alarm</em> forecasts fail: for “alright gizmo” on the public network, the model expects about 0.3%, while the detector fires on 2.6–4.1% of other clips and is broken.</p>
+<p>That forecast was not free-form judgment but a calibration chosen on tuning networks, <code>max(0.3 × measured check rate, 0.2%)</code>. The hidden public-network negatives did not behave like the clips in the model’s check.</p>
+
+<figure id="figure-12" class="wide">
+  <div class="fig-badges"><span class="badge dark">30 / 30 catch forecasts held</span><span class="badge bad">4 false-alarm forecasts missed</span></div>
+  <div class="scroll"><svg viewBox="0 0 1000 370" width="100%" role="img" aria-label="Forecasts compared with results on 30 detectors"><line x1="55" x2="980" y1="276.0" y2="276.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="280.0" text-anchor="end" class="chart-tick">0%</text><line x1="55" x2="980" y1="214.5" y2="214.5" stroke="rgba(0,0,0,.10)"/><text x="47" y="218.5" text-anchor="end" class="chart-tick">25%</text><line x1="55" x2="980" y1="153.0" y2="153.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="157.0" text-anchor="end" class="chart-tick">50%</text><line x1="55" x2="980" y1="91.5" y2="91.5" stroke="rgba(0,0,0,.10)"/><text x="47" y="95.5" text-anchor="end" class="chart-tick">75%</text><line x1="55" x2="980" y1="30.0" y2="30.0" stroke="rgba(0,0,0,.10)"/><text x="47" y="34.0" text-anchor="end" class="chart-tick">100%</text><rect x="64.16666666666667" y="30.0" width="10" height="22.139999999999993" rx="3" fill="#D9D7D0"/><circle cx="69.16666666666667" cy="42.30000000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="92.5" y="47.219999999999985" width="10" height="24.600000000000023" rx="3" fill="#D9D7D0"/><circle cx="97.5" cy="50.41799999999999" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="120.83333333333333" y="30.0" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="125.83333333333333" cy="42.30000000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="149.16666666666666" y="30.0" width="10" height="22.139999999999993" rx="3" fill="#D9D7D0"/><circle cx="154.16666666666666" cy="46.48200000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="177.49999999999997" y="32.46" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="182.49999999999997" cy="42.30000000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="220.83333333333331" y="66.9" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="225.83333333333331" cy="54.599999999999994" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="249.16666666666666" y="64.44" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="254.16666666666666" cy="58.782" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="277.5" y="54.599999999999994" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="282.5" cy="62.718" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="305.8333333333333" y="91.5" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="310.8333333333333" cy="87.318" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="334.1666666666667" y="61.980000000000004" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="339.1666666666667" cy="50.41799999999999" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="377.5" y="86.58" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="382.5" cy="99.61799999999998" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="405.8333333333333" y="61.980000000000004" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="410.8333333333333" cy="75.01799999999999" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="434.1666666666667" y="64.44" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="439.1666666666667" cy="62.718" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="462.5" y="74.28000000000002" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="467.5" cy="79.19999999999999" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="490.8333333333333" y="54.599999999999994" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="495.8333333333333" cy="66.9" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="534.1666666666666" y="42.30000000000001" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="539.1666666666666" cy="46.48200000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="562.4999999999999" y="44.76000000000001" width="10" height="24.6" rx="3" fill="#D9D7D0"/><circle cx="567.4999999999999" cy="42.30000000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="590.8333333333333" y="30.0" width="10" height="22.139999999999993" rx="3" fill="#D9D7D0"/><circle cx="595.8333333333333" cy="38.11799999999998" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="619.1666666666666" y="30.0" width="10" height="22.139999999999993" rx="3" fill="#D9D7D0"/><circle cx="624.1666666666666" cy="38.11799999999998" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="647.4999999999999" y="30.0" width="10" height="22.139999999999993" rx="3" fill="#D9D7D0"/><circle cx="652.4999999999999" cy="42.30000000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="690.8333333333333" y="268.62" width="10" height="7.3799999999999955" rx="3" fill="#D9D7D0"/><circle cx="695.8333333333333" cy="276.0" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="719.1666666666666" y="268.62" width="10" height="7.3799999999999955" rx="3" fill="#D9D7D0"/><circle cx="724.1666666666666" cy="276.0" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="747.4999999999999" y="266.15999999999997" width="10" height="9.840000000000032" rx="3" fill="#D9D7D0"/><circle cx="752.4999999999999" cy="276.0" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="775.8333333333333" y="266.15999999999997" width="10" height="9.840000000000032" rx="3" fill="#D9D7D0"/><circle cx="780.8333333333333" cy="276.0" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="804.1666666666666" y="268.62" width="10" height="7.3799999999999955" rx="3" fill="#D9D7D0"/><circle cx="809.1666666666666" cy="276.0" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="847.4999999999999" y="111.17999999999999" width="10" height="24.600000000000037" rx="3" fill="#D9D7D0"/><circle cx="852.4999999999999" cy="124.218" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><circle cx="852.4999999999999" cy="124.218" r="7" fill="none" stroke="#C4281C" stroke-width="1.7"/><rect x="875.8333333333333" y="192.35999999999999" width="10" height="24.600000000000023" rx="3" fill="#D9D7D0"/><circle cx="880.8333333333333" cy="206.382" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><rect x="904.1666666666666" y="103.80000000000001" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="909.1666666666666" cy="103.80000000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><circle cx="909.1666666666666" cy="103.80000000000001" r="7" fill="none" stroke="#C4281C" stroke-width="1.7"/><rect x="932.4999999999999" y="140.7" width="10" height="24.600000000000023" rx="3" fill="#D9D7D0"/><circle cx="937.4999999999999" cy="128.4" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><circle cx="937.4999999999999" cy="128.4" r="7" fill="none" stroke="#C4281C" stroke-width="1.7"/><rect x="960.8333333333333" y="113.63999999999999" width="10" height="24.599999999999994" rx="3" fill="#D9D7D0"/><circle cx="965.8333333333333" cy="107.98200000000001" r="4.2" fill="#F7611D" stroke="#fff" stroke-width="1"/><circle cx="965.8333333333333" cy="107.98200000000001" r="7" fill="none" stroke="#C4281C" stroke-width="1.7"/><text x="125.83333333333331" y="301" text-anchor="middle" class="chart-lab">Private</text><text x="125.83333333333331" y="318" text-anchor="middle" class="chart-tick">“hey nova”</text><text x="282.5" y="301" text-anchor="middle" class="chart-lab">Private</text><text x="282.5" y="318" text-anchor="middle" class="chart-tick">“alright gizmo”</text><text x="439.16666666666663" y="301" text-anchor="middle" class="chart-lab">Retrained</text><text x="439.16666666666663" y="318" text-anchor="middle" class="chart-tick">“hey nova”</text><text x="595.8333333333333" y="301" text-anchor="middle" class="chart-lab">Retrained</text><text x="595.8333333333333" y="318" text-anchor="middle" class="chart-tick">“alright gizmo”</text><text x="752.5" y="301" text-anchor="middle" class="chart-lab">Public</text><text x="752.5" y="318" text-anchor="middle" class="chart-tick">“hey nova”</text><text x="909.1666666666665" y="301" text-anchor="middle" class="chart-lab">Public</text><text x="909.1666666666665" y="318" text-anchor="middle" class="chart-tick">“alright gizmo”</text><rect x="165" y="348" width="12" height="12" rx="3" fill="#D9D7D0"/><text x="184" y="358" class="chart-tick">forecast range</text><circle cx="315" cy="354" r="5" fill="#F7611D"/><text x="328" y="358" class="chart-tick">what it caught at its own threshold</text><circle cx="580" cy="354" r="7" fill="none" stroke="#C4281C" stroke-width="2"/><text x="594" y="358" class="chart-tick">false-alarm forecast failed</text></svg></div>
+  <figcaption><span class="fl">Figure 12</span><b>All 30 catch-rate forecasts held; four false-alarm forecasts did not.</b> Pale bars are catch forecasts written before hidden scoring. Dots show catch at the threshold the model chose; red rings mark runs whose false-alarm forecast failed and whose detector exceeded 1%. Forecasts concern the model’s own threshold, not the tightened headline metric.</figcaption>
+</figure>
+
+<div class="call"><p><b>The boundary is the result.</b> The tuned model is not a general weight programmer. It learned one four-step procedure: synthesize, measure selectivity, set a percentile threshold, check once. It works when the body has units that respond selectively to the target. It fails when those features are entangled, and its own small check can miss the failure.</p></div>
+
+<p>One more limit: the headline budget is still far looser than a product needs. The front-end advances every 80 ms, so 0.2% positive windows corresponds to roughly 90 positive windows an hour on a continuous stream (overlapping windows, not independent two-second trials). Commercial wake-word systems aim for about 0.5 false wake-ups an hour. The question is whether a model can write useful weights at all, not whether these layers are ready to ship.</p>
+
+<h2 id="reproduce"><span class="n">07</span>Check every number</h2>
+<p>Don’t take our word for it. Every run’s task sheet, transcript, executed code, saved answer and hidden-evaluation activations are in the project repository. No model and no GPU are needed to rescore an answer:</p>
+
+<pre><code>git clone https://github.com/dyalect-ai/llm-edit-weights
+cd llm-edit-weights
+pip install numpy
+python3 scripts/verify_answer.py   kws/sandboxes/ft_final_ei2_bench_A_0_0_0 A
+
+hey nova:      caught 93.3% within the false-alarm budget
+alright gizmo: caught 81.7% within the false-alarm budget</code></pre>
+
+<div class="audit-grid">
+  <div class="audit"><span class="a-k">Final transcripts</span><b>30 / 30</b><span>Compliant in a separate Fable review: 15 final-model runs plus 15 first-round runs.</span></div>
+  <div class="audit"><span class="a-k">Forecasts</span><b>30 / 30</b><span>Catch-rate forecasts held; four false-alarm forecasts failed on the public network.</span></div>
+  <div class="audit"><span class="a-k">Recompute</span><b>2 scripts</b><span><code>story_numbers.py</code> covers headline scores and run statistics; <code>yardstick_finished.py</code> the trained reference. The slider’s seven curve points are embedded in this draft and use the same rule.</span></div>
+</div>
+
+<div class="repo-map">
+  <div>scripts/</div><div>The headline metric, answer rescoring and number regeneration.</div>
+  <div>kws/</div><div>Frozen networks, sandbox tools, every answer and the hidden evaluation activations.</div>
+  <div>gym/</div><div>Teacher, episode generation, LoRA training, model selection and final result files.</div>
+  <div>docs/</div><div>Method, results, disclosures, reproduction instructions and the standalone HTML drafts.</div>
+</div>
+
+<h3 id="sec-read-these-caveats-before-quoting-the-headline">Read these caveats before quoting the headline</h3>
+<ul>
+  <li>Fable ran once; the fine-tuned model ran five times. The 0.8B’s 95% interval is 82–86%.</li>
+  <li>At the thresholds the writers chose themselves, Fable catches more (93% versus 90%) because it also fires more often. The 0.8B leads after equalizing the false-alarm budget.</li>
+  <li>The method was distilled from Fable and tuned through roughly 36 labelled variant comparisons before it was frozen. The 0.8B did not invent it.</li>
+  <li>An earlier teacher used diagonal LDA, which the task rules forbade. A review caught it; we discarded it and regenerated all training data. That discarded teacher had already been run once on the benchmark, where it scored 88.3% at the strict 0.2% false-alarm setting. The final teacher was frozen before final evaluation.</li>
+  <li>All speech is synthetic: 904 Piper voices, with test voices held out.</li>
+  <li>The harnesses differ. The fine-tuned model used raw completion with thinking disabled and a 32,768-token context; the untuned Qwen size ladder used thinking and a 65,536-token context; Fable ran as a full agent.</li>
+  <li>The public “hey jarvis” network is derived from an openWakeWord pretrained model and is covered by CC BY-NC-SA 4.0; the repository lists the affected files.</li>
+</ul>
+
+<h2 id="closing"><span class="n">08</span>Scientists and operators</h2>
+<p>The capability looked like a single thing, “write neural-network weights by hand,” but it came apart into a chain: operating a lab, designing stimuli, interpreting internal activations, turning measurements into weights, choosing a threshold, checking the result and knowing when not to trust it.</p>
+<p>Scale helped with that chain, but it was not the only route. A frontier model discovered a good procedure; worked examples taught a 0.8B model to run it; a prompt containing the same information did not. The result is narrow but useful: some capabilities that look like irreducible judgment may be procedures whose execution can be distilled into very small models.</p>
+<p>The harder question: what happens when no single-unit procedure exists? On the public network, a trained layer still finds signal that the hand-written method mostly misses. That gap is where the next experiment belongs: can a small model learn not only to run a known recipe, but to choose or invent the right experiment for a network that represents sound in a new way?</p>
+
+<div class="findings">
+  <p>What we would keep</p>
+  <ul>
+    <li><b>Frontier models as scientists:</b> use them to discover measurements and procedures, not only to produce answers.</li>
+    <li><b>Small models as operators:</b> once a procedure is stable, train a cheap model to run it again and again.</li>
+    <li><b>One shared yardstick:</b> compare detectors at the same false-alarm budget, and show what changes when the budget moves.</li>
+    <li><b>Publish the evidence:</b> saved weights, transcripts and hidden activations let readers check the claim without taking the story on trust.</li>
+  </ul>
+</div>
+
+<hr>
+<h3 id="sec-acknowledgements-and-provenance">Acknowledgements and provenance</h3>
+<p>The experiment uses Qwen3.5 open models, Piper synthetic voices, openWakeWord’s speech front-end and, for the public body, its pretrained “hey jarvis” model. The fine-tuned model was trained with LoRA on CPU. The repository contains the complete methods and licensing notes. The experiments were run in Dyalect’s research environment. Fable discovered the original method and separately reviewed the final transcripts.</p>
+
+<h3 id="sec-citation">Citation</h3>
+<div class="cite">
+<pre><code>Dyalect Research, “We taught a 0.8B model to hand-write part of a neural network,”
+Dyalect Research, Nov 2026.
+https://github.com/dyalect-ai/llm-edit-weights</code></pre>
+</div>
+<p class="totop"><a href="#toc">↑ Back to contents</a></p>
+</article></main>
+
+<footer class="site" data-theme="dark">
+<div class="wrap">
+<div class="foot">
+<div><a class="brand" href="../"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span class="word">dyalect</span></a>
+<p>Specialized models for the enterprise, and the research behind them.</p></div>
+<nav><a href="../">Home</a><a href="../posts/">All posts</a><a href="../feed.xml">RSS</a></nav>
+</div>
+<p class="giant" aria-hidden="true">dyalect.</p>
+<div class="base mono"><span>© 2026 Dyalect</span><span>Posts CC BY 4.0 · code MIT</span></div>
+</div>
+</footer>
+
+<script>
+const metricData = {"budgets":[0.05,0.1,0.2,0.3,0.5,0.8,1.0],"curves":{"Qwen3.5 0.8B, fine-tuned":[63.8,71.8,84.3,89.2,90.3,90.3,90.3],"Fable 5.1":[46.7,54.2,77.5,90.8,93.3,93.3,93.3],"Kimi K3":[45.8,54.2,70.8,82.5,88.3,89.2,89.2],"Qwen3.6 35B-A3B":[40.0,45.8,53.3,56.7,64.2,64.2,64.2]},"own":{"Qwen3.5 0.8B, fine-tuned":{"caught":90.3,"fa":0.35},"Fable 5.1":{"caught":93.3,"fa":0.54},"Kimi K3":{"caught":89.2,"fa":0.57},"Qwen3.6 35B-A3B":{"caught":64.2,"fa":0.38}}};
+const metricColors = {
+  "Qwen3.5 0.8B, fine-tuned": "#F7611D",
+  "Fable 5.1": "#000000",
+  "Kimi K3": "#A09E97",
+  "Qwen3.6 35B-A3B": "#C2C0B9"
+};
+const metricText = {
+  "Qwen3.5 0.8B, fine-tuned": "#B63D07",
+  "Fable 5.1": "#000000",
+  "Kimi K3": "#5B5A55",
+  "Qwen3.6 35B-A3B": "#5B5A55"
+};
+const metricShort = {
+  "Qwen3.5 0.8B, fine-tuned": "0.8B fine-tuned",
+  "Fable 5.1": "Fable 5.1",
+  "Kimi K3": "Kimi K3",
+  "Qwen3.6 35B-A3B": "Qwen 35B"
+};
+const slider = document.getElementById("budget-slider");
+const rows = document.getElementById("metric-bars");
+for (const name of Object.keys(metricData.curves)) {
+  const row = document.createElement("div");
+  row.className = "metric-row";
+  row.dataset.name = name;
+  row.innerHTML = `<span class="metric-name">${metricShort[name]}</span><span class="metric-track"><i class="metric-fill" style="background:${metricColors[name]}"></i></span><span class="metric-value"></span>`;
+  rows.appendChild(row);
+}
+function updateMetric() {
+  const i = Number(slider.value);
+  const b = metricData.budgets[i];
+  const values = Object.entries(metricData.curves).map(([name, vals]) => [name, vals[i]]).sort((a,b) => b[1]-a[1]);
+  const rank = Object.fromEntries(values.map((x,j) => [x[0],j]));
+  for (const row of rows.children) {
+    const name = row.dataset.name, val = metricData.curves[name][i];
+    row.style.order = rank[name];
+    row.querySelector(".metric-fill").style.width = `${val}%`;
+    row.querySelector(".metric-value").textContent = `${val.toFixed(1)}%`;
+    row.querySelector(".metric-value").style.color = metricText[name];
+  }
+  const perThousand = b * 10;
+  document.getElementById("budget-read").textContent = `${perThousand.toFixed(perThousand < 1 ? 1 : 0)} in 1,000 · ${b.toFixed(2)}%`;
+  const first = values[0], second = values[1];
+  for (const tb of ticks.children) tb.classList.toggle("on", tb.dataset.i === slider.value);
+  slider.setAttribute("aria-valuetext", `${perThousand.toFixed(perThousand < 1 ? 1 : 0)} false alarms per 1,000 clips`);
+  document.getElementById("budget-note").innerHTML = `<b>${metricShort[first[0]]}</b> leads at this budget: ${first[1].toFixed(1)}% versus ${second[1].toFixed(1)}% for ${metricShort[second[0]]}.`;
+}
+slider.addEventListener("input", updateMetric);
+const ticks = document.getElementById("budget-ticks");
+ticks.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  slider.value = b.dataset.i;
+  updateMetric();
+});
+updateMetric();
+</script>
+<script>
+/* reading bar: section label + progress, shown once the hero has scrolled away */
+(function () {
+  var art = document.querySelector("article"), hero = document.querySelector("header.hero");
+  if (!art || !hero) return;
+  var heads = Array.prototype.slice.call(art.querySelectorAll("h2[id]"));
+  var bar = document.createElement("div");
+  bar.className = "readbar"; bar.setAttribute("aria-hidden", "true");
+  bar.innerHTML = '<div class="wrap"><a href="#toc" tabindex="-1"><span class="n"></span><span class="t"></span></a><span class="pct"></span></div><i></i>';
+  document.body.appendChild(bar);
+  var n = bar.querySelector(".n"), t = bar.querySelector(".t"), pct = bar.querySelector(".pct"), line = bar.querySelector("i");
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var y = window.scrollY, vh = window.innerHeight;
+    var top = art.getBoundingClientRect().top + y, h = art.offsetHeight;
+    var p = Math.max(0, Math.min(1, (y + vh * 0.3 - top) / Math.max(1, h - vh * 0.7)));
+    var cur = null;
+    for (var i = 0; i < heads.length; i++) if (heads[i].getBoundingClientRect().top < 120) cur = heads[i];
+    var show = y > hero.offsetHeight && art.getBoundingClientRect().bottom > 80;
+    bar.classList.toggle("show", show);
+    if (cur) {
+      var num = cur.querySelector(".n");
+      n.textContent = num ? num.textContent : "";
+      t.textContent = (num ? cur.textContent.replace(num.textContent, "") : cur.textContent).trim();
+    } else { n.textContent = ""; t.textContent = "Contents"; }
+    pct.textContent = Math.round(p * 100) + "%";
+    line.style.width = (p * 100) + "%";
+  }
+  window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+})();
+</script>
+</body>
+</html>
+<!-- build:enhanced -->

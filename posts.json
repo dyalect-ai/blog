@@ -4,6 +4,13 @@
     "title": "A hand-written answer key inside a real model",
     "date": "2026-11-07",
     "tag": "Interpretability",
-    "summary": "We wrote a calculator into Qwen2.5-0.5B by hand, so we know what every one of its weights is for. Then we pointed activation patching, attribution patching, integrated gradients and the logit lens at it to see what they would find."
+    "summary": "We hand-wrote a calculator into a real chat model: 16 new layers that make Qwen2.5-0.5B multiply exactly, its own 24 layers untouched. Then we pointed standard interpretability tools at this known circuit. Attribution patching missed 13 of the 14 blocks that matter."
+  },
+  {
+    "slug": "teaching-a-small-model-to-write-weights",
+    "title": "We taught a 0.8B model to hand-write part of a neural network",
+    "date": "2026-11-09",
+    "tag": "Weight writing",
+    "summary": "Frontier model Fable hand-wrote a wake-word detector’s last layer, 129 numbers, no training, by experimenting like a neuroscientist. Told the method, a 0.8B model failed; taught by example, it caught 84% of held-out synthetic utterances at 2 false alarms per 1,000 clips, against Fable’s 78%."
   }
 ]

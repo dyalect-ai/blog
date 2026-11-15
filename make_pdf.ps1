@@ -7,7 +7,7 @@
 # paper.pdf and served at /blog/llm-weight-edit-interpretability/paper.pdf.
 
 $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-$url  = "https://veolyn-ai.github.io/blog/llm-weight-edit-interpretability/"
+$url  = "https://dyalect-ai.github.io/blog/llm-weight-edit-interpretability/"
 $out  = Join-Path $PSScriptRoot "llm-weight-edit-interpretability\paper.pdf"
 
 if (-not (Test-Path $edge)) { throw "Edge not found at $edge" }
