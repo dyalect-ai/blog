@@ -53,7 +53,8 @@ generator and the data, never the generated HTML.
 | File | Purpose |
 |---|---|
 | `index.html` | The post itself: prose, figures as inline SVG, styles scoped to the page. |
-| `og.jpg` | 1200×630 share card, also the index thumbnail. |
+| `og.jpg` | 1200×630 share card for link previews. |
+| `cover.jpg` | Optional 1200×630 index thumbnail: the post's signature figure, no title. Falls back to `og.jpg`. |
 | `fonts/` | Subsetted Geist, referenced relatively; `OFL.txt` travels with them. |
 
 ## Writing a post

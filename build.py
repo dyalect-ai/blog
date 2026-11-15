@@ -60,7 +60,7 @@ nav.toc a { display: grid; grid-template-columns: 3em 1fr; align-items: baseline
             border-bottom: 0; border-radius: 2px; color: #000; text-decoration: none; font-size: 16px; line-height: 1.35;
             transition: background 120ms cubic-bezier(.2,0,0,1); }
 nav.toc a:hover { background: #F4F3EF; }
-nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #7B7973; }
+nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #5B5A55; }
 nav.toc li.l3 a { font-size: 14px; color: #5B5A55; padding-left: 20px; }
 nav.toc li.l3 a:hover { color: #000; }
 nav.toc + h2 { margin-top: 16px; }
@@ -192,17 +192,25 @@ def post_meta(p):
 
 
 def display(title):
-    """Display titles follow the Signal rule for English headlines: all lower case, closed by a full stop."""
-    title = title.strip()
-    return title.lower() + ("" if title[-1] in ".?!" else ".")
+    """Display titles follow the Signal rule for English headlines: lower case, closed by a full stop.
+    Names and units with digits or inner capitals (Qwen2.5, 0.8B, LoRA) keep their spelling."""
+    def word(w):
+        letters = re.sub(r"[^A-Za-z]", "", w)
+        if any(c.isdigit() for c in w) or (letters[1:] and letters[1:] != letters[1:].lower()):
+            return w
+        return w.lower()
+    title = " ".join(word(w) for w in title.strip().split())
+    return title + ("" if title[-1] in ".?!" else ".")
 
 
 def cards(rel):
     out = []
     for p in POSTS:
         href = f"{rel}{p['slug']}/"
+        # the card shows the post's signature figure (cover.jpg); og.jpg, with the title on it, is for link previews
+        art = "cover.jpg" if os.path.exists(os.path.join(HERE, p["slug"], "cover.jpg")) else "og.jpg"
         out.append(f"""<a class="post" href="{href}">
-<img src="{href}og.jpg" alt="" loading="lazy">
+<img src="{href}{art}" alt="" loading="lazy">
 <div class="body"><div class="meta"><span class="tag">{esc(p['tag'])}</span><span class="mono">{post_meta(p)}</span></div>
 <h3>{esc(display(p['title']))}</h3>
 <p>{esc(p['summary'])}</p>
