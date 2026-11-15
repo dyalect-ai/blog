@@ -1,16 +1,16 @@
 <div align="center">
 
-<img src="./assets/avatar.png" alt="Veolyn AI" width="104" />
+<img src="./assets/avatar.png" alt="Dyalect" width="104" />
 
-# Veolyn AI — Research Blog
+# Dyalect — Research Blog
 
 **What we learn while building specialized models, with the numbers behind every claim.**
 
-The public research blog of Veolyn AI. A home page and a post index in plain static
+The public research blog of Dyalect. A home page and a post index in plain static
 HTML and CSS: no framework, no runtime dependency, no build step at serve time.
 GitHub Pages publishes the repository root of `main` as is.
 
-[Read the blog →](https://veolyn-ai.github.io/blog/)
+[Read the blog →](https://dyalect-ai.github.io/blog/)
 
 </div>
 
@@ -28,6 +28,11 @@ That constraint is deliberate. A post is a single HTML file with its figures inl
 as SVG and its fonts subsetted alongside it, so it renders identically years later,
 offline, and from any mirror.
 
+The look follows the Signal design system: orange, black, white and a warm grey;
+flat fills and 1px hairlines; corners of 4px at most; light display type with English
+headlines in lower case; mono for labels and data; one orange element per screen. The
+tokens sit at the top of `assets/site.css`.
+
 ## Layout
 
 | Path | Role |
@@ -37,7 +42,7 @@ offline, and from any mirror.
 | `site.json` | Blog name and canonical base URL, used for absolute `og:` tags. |
 | `<slug>/` | One post, self-contained — see below. Served at `/<slug>/`. |
 | `posts/` | Generated: the index listing every post. |
-| `assets/` | Shared stylesheet, Geist fonts (SIL OFL 1.1), avatar. |
+| `assets/` | Shared stylesheet, Geist fonts (SIL OFL 1.1), avatar, site share card `og.jpg`. |
 | `.nojekyll` | Tells Pages to publish the build untouched. |
 
 Generated pages are committed, so Pages needs no CI step to deploy. Edit the
