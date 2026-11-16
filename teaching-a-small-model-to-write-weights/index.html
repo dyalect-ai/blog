@@ -953,7 +953,7 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
 .nm-list div { border-top: 1px solid #000; padding-top: 10px; font-size: 13.5px; line-height: 1.4; color: var(--g700); }
 .nm-list b { display: block; font-weight: 300; font-size: 32px; line-height: 1.1; letter-spacing: -.02em; color: #000; margin: 6px 0 4px; }
 .nm-list .k { font: 500 12px/1.3 var(--mono); letter-spacing: .04em; color: #000; }
-.audit-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.audit-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media screen and (max-width: 900px) {
   .lad-row { grid-template-columns: minmax(0, 1fr) repeat(6, 24px); gap: 4px 6px; }
   .lad-row .lad-note { grid-column: 1 / -1; }
@@ -1021,7 +1021,7 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
     <li class="l2"><a href="#run"><span class="n">05</span><span class="t">Watching the student work</span></a></li>
     <li class="l2"><a href="#master"><span class="n">06</span><span class="t">The student against the master</span></a></li>
     <li class="l2"><a href="#limits"><span class="n">07</span><span class="t">Where the method breaks</span></a></li>
-    <li class="l2"><a href="#reproduce"><span class="n">08</span><span class="t">Check every number</span></a></li>
+    <li class="l2"><a href="#reproduce"><span class="n">08</span><span class="t">How we checked the numbers</span></a></li>
     <li class="l2"><a href="#closing"><span class="n">09</span><span class="t">Scientists and operators</span></a></li>
   </ol>
 </nav>
@@ -1138,7 +1138,7 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
 <p>The capability is a chain, and scale fills it in late. If the chain can be written down, can a small model be taught to run all of it?</p>
 
 <h2 id="teaching"><span class="n">04</span>Telling failed. Teaching worked.</h2>
-<p>Can’t you just hand a method over? We put the full procedure and a worked example in the small model’s prompt. It failed. One run repeated the example on the example’s own phrases, then saved 128 numbers where 129 were required. Three talked until they overflowed their context, the text a model can hold at once. The method was in the prompt; the ability to run it was not (<a class="figref" href="#figure-10">Figure 10</a>).</p>
+<p>Can’t you just hand a method over? We put the full procedure and a worked example in the small model’s prompt. It failed. One run repeated the example on the example’s own phrases, then saved 128 numbers where 129 were required. Others talked until they overflowed their context, the text a model can hold at once. The method was in the prompt; the ability to run it was not (<a class="figref" href="#figure-10">Figure 10</a>).</p>
 
 <figure id="figure-10" class="wide">
   <div class="triple">
@@ -1188,7 +1188,7 @@ bias = -percentile(negative_scores, 99.4)</code></pre></div></div>
 write_method_and_forecast(...)</code></pre></div></div>
     <div class="turn done"><div class="tn">Hidden test</div><div><p>Within the budget of 2 false alarms per 1,000 other clips: <b>“hey nova” catches 93.3%</b>; <b>“alright gizmo” catches 81.7%</b>. Both thresholds are tightened because the model’s choices fire on 0.40% and 0.32% of other clips.</p></div></div>
   </div>
-  <figcaption><span class="fl">Figure 12</span><b>One complete benchmark run, abridged.</b> The model writes executable code, sees only the sandbox output, and never sees the hidden evaluation. The full transcript and executed code are in the repository.</figcaption>
+  <figcaption><span class="fl">Figure 12</span><b>One complete benchmark run, abridged.</b> The model writes executable code, sees only the sandbox output, and never sees the hidden evaluation.</figcaption>
 </figure>
 
 <h2 id="master"><span class="n">06</span>The student against the master</h2>
@@ -1235,29 +1235,14 @@ write_method_and_forecast(...)</code></pre></div></div>
 
 <p>One more limit: the headline budget is still far looser than a product needs. The front-end advances every 80 ms, so 0.2% positive windows corresponds to roughly 90 positive windows an hour on a continuous stream (overlapping windows, not independent two-second trials). Commercial wake-word systems aim for about 0.5 false wake-ups an hour. The question is whether a model can write useful weights at all, not whether these layers are ready to ship.</p>
 
-<h2 id="reproduce"><span class="n">08</span>Check every number</h2>
-<p>Don’t take our word for it. Every run’s task sheet, transcript, executed code, saved answer and hidden-evaluation activations are in the project repository. No model and no GPU are needed to rescore an answer:</p>
-
-<pre><code>git clone https://github.com/dyalect-ai/llm-edit-weights
-cd llm-edit-weights
-pip install numpy
-python3 scripts/verify_answer.py   kws/sandboxes/ft_final_ei2_bench_A_0_0_0 A
-
-hey nova:      caught 93.3% within the false-alarm budget
-alright gizmo: caught 81.7% within the false-alarm budget</code></pre>
+<h2 id="reproduce"><span class="n">08</span>How we checked the numbers</h2>
+<p>We checked the work three ways: a separate review of every final transcript, a rule audit of every episode, and scripts that regenerate every number in this post from the saved answers and hidden-evaluation activations.</p>
 
 <div class="audit-grid four">
   <div class="audit"><span class="a-k">Final transcripts</span><b>30 / 30</b><span>Compliant in a separate Fable review: 15 final-model runs plus 15 first-round runs.</span></div>
   <div class="audit"><span class="a-k">Forecasts</span><b>30 / 30</b><span>Catch-rate forecasts held; four false-alarm forecasts failed on the public network.</span></div>
-  <div class="audit"><span class="a-k">Recompute</span><b>2 scripts</b><span><code>story_numbers.py</code> covers headline scores and run statistics; <code>yardstick_finished.py</code> the trained reference. The slider’s seven curve points are embedded in this page and use the same rule.</span></div>
+  <div class="audit"><span class="a-k">Recompute</span><b>All</b><span>Regenerated by script from saved answers, including the trained reference. The slider’s seven curve points use the same rule.</span></div>
   <div class="audit"><span class="a-k">Rule checks</span><b>0</b><span>Violations in any fine-tuned episode, from static code checks plus a runtime audit of file access and clip counts. Untuned baselines broke the clip budget in 4 of 10 runs.</span></div>
-</div>
-
-<div class="repo-map">
-  <div>scripts/</div><div>The headline metric, answer rescoring and number regeneration.</div>
-  <div>kws/</div><div>Frozen networks, sandbox tools, every answer and the hidden evaluation activations.</div>
-  <div>gym/</div><div>Teacher, episode generation, LoRA training, model selection and final result files.</div>
-  <div>docs/</div><div>Method, results, disclosures, reproduction instructions and the standalone HTML drafts.</div>
 </div>
 
 <h3 id="sec-read-these-caveats-before-quoting-the-headline">Read these caveats before quoting the headline</h3>
@@ -1270,7 +1255,7 @@ alright gizmo: caught 81.7% within the false-alarm budget</code></pre>
   <li>The harnesses differ. The fine-tuned model used raw completion with thinking disabled and a 32,768-token context; the untuned Qwen size ladder used thinking and a 65,536-token context; Fable ran as a full agent.</li>
   <li>The size ladder is small: one to three runs per model, private body only. The untuned Qwen models ran on CPU in a simple code loop; the 35B run was stopped after 7 turns, once it had saved its answers.</li>
   <li>The shortcut generator is ridge regression standing in for a fine-tuned language model, and it is scored on 44 held-out phrases rather than the two benchmark phrases.</li>
-  <li>The public “hey jarvis” network is derived from an openWakeWord pretrained model and is covered by CC BY-NC-SA 4.0; the repository lists the affected files.</li>
+  <li>The public “hey jarvis” network is derived from an openWakeWord pretrained model and is covered by CC BY-NC-SA 4.0.</li>
 </ul>
 
 <h2 id="closing"><span class="n">09</span>Scientists and operators</h2>
@@ -1285,13 +1270,13 @@ alright gizmo: caught 81.7% within the false-alarm budget</code></pre>
     <li><b>Small models as operators:</b> once a procedure is stable, train a cheap model to run it again and again.</li>
     <li><b>Experiments over shortcuts:</b> a procedure that measures the network survives retraining it; a learned map from phrase to weights does not.</li>
     <li><b>One shared yardstick:</b> compare detectors at the same false-alarm budget, and show what changes when the budget moves.</li>
-    <li><b>Publish the evidence:</b> saved weights, transcripts and hidden activations let readers check the claim without taking the story on trust.</li>
+    <li><b>Keep the evidence:</b> saved weights, transcripts and hidden activations make every claim checkable rather than a story to take on trust.</li>
   </ul>
 </div>
 
 <hr>
 <h3 id="sec-acknowledgements">Acknowledgements</h3>
-<p class="cite">We thank the Qwen team for the Qwen3.5 open models, the Rhasspy project for Piper<a class="sn" href="#ref-3" style="--n:'3'"></a><span class="note" style="--n:'3'" title="Piper: a fast, local neural text to speech system"><a href="#ref-3">Hansen, 2023</a></span> and its synthetic voices, and the authors of openWakeWord<a class="sn" href="#ref-9" style="--n:'9'"></a><span class="note" style="--n:'9'" title="openWakeWord"><a href="#ref-9">Scripka, 2022</a></span>, whose speech front-end we build on and whose pretrained “hey jarvis” model provides the public body. The fine-tuned model was trained with LoRA on CPU. The repository contains the complete methods and licensing notes.</p>
+<p class="cite">We thank the Qwen team for the Qwen3.5 open models, the Rhasspy project for Piper<a class="sn" href="#ref-3" style="--n:'3'"></a><span class="note" style="--n:'3'" title="Piper: a fast, local neural text to speech system"><a href="#ref-3">Hansen, 2023</a></span> and its synthetic voices, and the authors of openWakeWord<a class="sn" href="#ref-9" style="--n:'9'"></a><span class="note" style="--n:'9'" title="openWakeWord"><a href="#ref-9">Scripka, 2022</a></span>, whose speech front-end we build on and whose pretrained “hey jarvis” model provides the public body. The fine-tuned model was trained with LoRA on CPU.</p>
 <p class="cite">The experiments in this post were run in Dyalect’s research environment. Fable discovered the original method and separately reviewed the final transcripts.</p>
 
 <h3 id="sec-citation">Citation</h3>
