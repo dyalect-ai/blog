@@ -493,8 +493,9 @@ table.lens tr.hl td { background: var(--orange-50); }
 .chip { background: var(--g100); color: #000; border-radius: 2px; }
 
 @media screen {
-  /* flush left, ragged right: no rivers of space on narrow screens */
-  main p, main li, figcaption, .hero .lead { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+  /* body text justified with hyphenation; captions and the lead stay flush left */
+  main p, main li, .hero .lead { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  figcaption { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
   main { max-width: 1296px; padding: 88px 48px 128px; }
   h2 { margin: 104px 0 24px; }
   figure { padding: 28px 28px 22px; }
@@ -526,7 +527,7 @@ table.lens tr.hl td { background: var(--orange-50); }
   .hero h1 { font-weight: 300; font-size: clamp(44px, 6.4vw, 92px); line-height: 1.0; letter-spacing: -.035em; max-width: 13em; }
   .hero h1 .hl { color: var(--orange); }
   .hero .lead { font-size: 20px; line-height: 1.55; color: var(--g400); max-width: 46em; margin: 36px 0 0;
-                text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+                text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
   .hero .lead .math { color: #fff; }
   .byline { margin-top: 72px; border-top: 1px solid var(--g700); padding: 16px 0 24px; font: 500 12px/1.3 var(--mono);
             letter-spacing: .06em; color: var(--g400); }
@@ -623,6 +624,10 @@ table.lens tr.hl td { background: var(--orange-50); }
 
 /* the back link sits flush left in every post */
 p.totop { text-align: left; }
+@media screen and (max-width: 640px) {
+  /* a narrow column cannot justify without rivers: flush left on phones */
+  main p, main li, .hero .lead { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+}
 </style>
 </head>
 <body>
