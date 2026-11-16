@@ -51,23 +51,22 @@ POST_CSS = """<style>
 .skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #000; color: #fff; padding: 10px 16px; }
 .skip:focus { left: 0; }
 :focus-visible { outline: 2px solid #CF4607; outline-offset: 2px; }
-nav.toc { margin: 0 0 56px; padding: 12px 0 16px; border-top: 1px solid #000; border-bottom: 1px solid #C2C0B9; }
-nav.toc .toc-h { margin: 0 0 12px; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5B5A55; }
-nav.toc ol { margin: 0; padding: 0; list-style: none; }
+nav.toc { margin: 0 0 72px; padding: 0; border-top: 1px solid #000; }
+nav.toc .toc-h { margin: 0; padding: 12px 0 14px; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5B5A55; }
+nav.toc ol { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid #C2C0B9; }
 nav.toc li { margin: 0; }
-nav.toc li.l2 + li.l2 { margin-top: 4px; }
-nav.toc a { display: grid; grid-template-columns: 3em 1fr; align-items: baseline; gap: 0 4px; padding: 5px 8px; margin: 0 -8px;
-            border-bottom: 0; border-radius: 2px; color: #000; text-decoration: none; font-size: 16px; line-height: 1.35;
-            transition: background 120ms cubic-bezier(.2,0,0,1); }
-nav.toc a:hover { background: #F4F3EF; }
-nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #5B5A55; }
-nav.toc li.l3 a { font-size: 14px; color: #5B5A55; padding-left: 20px; }
-nav.toc li.l3 a:hover { color: #000; }
-nav.toc + h2 { margin-top: 16px; }
-@media (max-width: 640px) {
-  nav.toc a { grid-template-columns: 2.6em 1fr; font-size: 15px; }
-  nav.toc li.l3 a { font-size: 13.5px; padding-left: 14px; }
-}
+nav.toc li.l2 { border-top: 1px solid #E8E6E0; }
+nav.toc a { position: relative; display: grid; grid-template-columns: 44px 1fr; align-items: baseline; padding: 11px 32px 11px 0;
+            border: 0; color: #000; text-decoration: none; font-size: 16px; line-height: 1.35; }
+nav.toc a::after { content: "→"; position: absolute; right: 4px; top: 11px; opacity: 0; transition: opacity 120ms cubic-bezier(.2,0,0,1); }
+nav.toc a:hover .t { text-decoration: underline; text-underline-offset: 4px; }
+nav.toc a:hover::after { opacity: 1; }
+nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #7B7973; }
+nav.toc li.l3 a { padding: 0 32px 11px 0; margin-top: -3px; font-size: 14px; color: #5B5A55; }
+nav.toc li.l3 a::before { content: "↳"; color: #A09E97; font-size: 12px; }
+nav.toc li.l3 .n { display: none; }
+nav.toc li.l3 a::after { top: 0; }
+nav.toc + h2 { margin-top: 0; }
 a.figref { color: #000; text-decoration: none; white-space: nowrap; border-bottom: 1px solid #A09E97; }
 a.figref:hover { border-bottom-color: #000; }
 figure[id] { scroll-margin-top: 24px; }
