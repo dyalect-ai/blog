@@ -18,6 +18,6 @@
     <link href="https://dyalect-ai.github.io/blog/llm-weight-edit-interpretability/"/>
     <id>https://dyalect-ai.github.io/blog/llm-weight-edit-interpretability/</id>
     <updated>2026-11-07T00:00:00Z</updated>
-    <summary>We hand-wrote a calculator into a real chat model: 16 new layers that make Qwen2.5-0.5B multiply exactly, its own 24 layers untouched. Then we pointed standard interpretability tools at this known circuit. Attribution patching missed 13 of the 14 blocks that matter.</summary>
+    <summary>We hand-wrote a calculator into a real chat model: 16 new layers that make Qwen2.5-0.5B multiply exactly, while its own 24 layers compute what they did before. Then we pointed standard interpretability tools at this known circuit. Attribution patching missed 13 of the 14 blocks that activation patching shows doing the work.</summary>
   </entry>
 </feed>

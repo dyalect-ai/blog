@@ -150,3 +150,7 @@ footer.site { padding-top: 64px; overflow: hidden; }
   body { font-size: 11pt; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* balanced headings, no lone last words in summaries */
+.hero h1, .post h3, .sec-head h2 { text-wrap: balance; }
+.post p, .hero p { text-wrap: pretty; }

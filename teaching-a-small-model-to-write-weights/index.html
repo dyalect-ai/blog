@@ -271,7 +271,6 @@
             border: 1px solid transparent; opacity: .78; transition: opacity .15s, background .15s; }
   .tabs a:hover { opacity: 1; background: rgba(255,255,255,.08); }
   .tabs a.on { opacity: 1; background: rgba(255,255,255,.12); border-color: var(--line); }
-  @media (max-width: 640px) { .top .word { display: none; } }
 
 
 /* build.py additions: skip link, contents, figure links, footer, print */
@@ -912,6 +911,9 @@ figure.problem figcaption .fl, figure.problem figcaption b { color: #fff; }
   /* a narrow column cannot justify without rivers: flush left on phones */
   main p, main li, .hero .lead { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
 }
+/* typesetting: fewer loose lines and lone last words; balanced headings */
+main p, main li, .hero .lead { text-wrap: pretty; }
+h1, h2, h3, .fig-title { text-wrap: balance; }
 </style>
 <style id="p2-canvas">
 /* round 3: ladder matrix, forecast table, pull quotes, near-miss list */
