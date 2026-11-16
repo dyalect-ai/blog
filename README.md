@@ -30,7 +30,7 @@ offline, and from any mirror.
 
 The look follows the Signal design system: orange, black, white and a warm grey;
 flat fills and 1px hairlines; corners of 4px at most; light display type with English
-headlines in lower case; mono for labels and data; one orange element per screen. The
+headlines in sentence case (capital first letter, full stop); mono for labels and data; one orange element per screen. The
 tokens sit at the top of `assets/site.css`.
 
 ## Layout

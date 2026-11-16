@@ -191,7 +191,7 @@ def post_meta(p):
 
 
 def display(title):
-    """Display titles follow the Signal rule for English headlines: lower case, closed by a full stop.
+    """Display titles are sentence case closed by a full stop: a capital first letter, the rest lower case.
     Names and units with digits or inner capitals (Qwen2.5, 0.8B, LoRA) keep their spelling."""
     def word(w):
         letters = re.sub(r"[^A-Za-z]", "", w)
@@ -199,6 +199,7 @@ def display(title):
             return w
         return w.lower()
     title = " ".join(word(w) for w in title.strip().split())
+    title = title[0].upper() + title[1:]
     return title + ("" if title[-1] in ".?!" else ".")
 
 
@@ -225,7 +226,7 @@ def section(num, title, intro=""):
 
 def home():
     hero = """<div class="eyebrow">Dyalect / research</div>
-<h1>specialized intelligence for the <span class="hl">enterprise.</span></h1>
+<h1>Specialized intelligence for the <span class="hl">enterprise.</span></h1>
 <p class="lead">General models know a little about everything. We build models that know your business.</p>
 <div class="cta"><a class="btn" href="posts/">Read our research →</a><a class="link" href="feed.xml">Follow via RSS</a></div>
 <div class="pillars">
@@ -233,24 +234,24 @@ def home():
 <div class="pillar"><h2><span class="marker">2</span>Measure</h2><p>Measured on the checks that matter to you.</p></div>
 <div class="pillar"><h2><span class="marker">3</span>Serve</h2><p>Served where you need them.</p></div>
 </div>"""
-    body = section("01", "research.", "Part of our work is research on what happens inside models, and how to change it directly.") + cards("")
+    body = section("01", "Research.", "Part of our work is research on what happens inside models, and how to change it directly.") + cards("")
     return page("", "", SITE["name"], "Specialized intelligence for the enterprise.", "Home", hero, body, short=False)
 
 
 def index():
     hero = """<div class="eyebrow">Blog / Dyalect research</div>
-<h1>research from <span class="hl">dyalect.</span></h1>
+<h1>Research from <span class="hl">dyalect.</span></h1>
 <p class="lead">What we learn while building specialized models: how to train them, measure them, serve them, and what happens inside them. Every post comes with the numbers behind its claims.</p>"""
-    body = section("01", "all posts.") + cards("../")
+    body = section("01", "All posts.") + cards("../")
     return page("../", "posts/", f"Blog · {SITE['name']}", "Research notes from Dyalect on building, measuring and understanding specialized models.",
                 "Blog", hero, body)
 
 
 def not_found():
     hero = """<div class="eyebrow">404 / not found</div>
-<h1>this page doesn't <span class="hl">exist.</span></h1>
+<h1>This page doesn't <span class="hl">exist.</span></h1>
 <p class="lead">The link may be old, or the post may have moved. Everything we have published is below.</p>"""
-    body = section("01", "try the blog.") + cards(BASE_PATH)
+    body = section("01", "Try the blog.") + cards(BASE_PATH)
     return page(BASE_PATH, "404.html", f"Not found · {SITE['name']}", "Page not found.", "", hero, body)
 
 
