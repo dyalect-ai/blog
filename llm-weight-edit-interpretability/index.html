@@ -713,21 +713,22 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
 <nav class="toc" id="toc" aria-label="Contents">
 <p class="toc-h">Contents</p>
 <ol>
-<li class="l2"><a href="#sec-introduction"><span class="n">00</span><span class="t">A model that can’t multiply</span></a></li>
-<li class="l2"><a href="#sec-writing-a-calculator-into-a-chat-model"><span class="n">01</span><span class="t">Building a calculator from the model’s own parts</span></a></li>
-<li class="l2"><a href="#sec-pointing-the-microscope-at-it"><span class="n">02</span><span class="t">Pointing the microscope at a known answer</span></a></li>
-<li class="l3"><a href="#sec-when-the-gradient-goes-flat"><span class="n"></span><span class="t">The shortcut that sees nothing</span></a></li>
-<li class="l3"><a href="#sec-does-integrated-gradients-fix-it"><span class="n"></span><span class="t">Can a smarter shortcut rescue it?</span></a></li>
-<li class="l3"><a href="#sec-what-patching-cannot-see"><span class="n"></span><span class="t">The parts patching never sees</span></a></li>
-<li class="l2"><a href="#sec-a-switch-we-wrote-vectors-we-didn-t"><span class="n">03</span><span class="t">A side story: a switch we wrote, vectors we didn’t</span></a></li>
-<li class="l3"><a href="#sec-reading-the-vectors-as-words"><span class="n"></span><span class="t">Can we read the vectors as words?</span></a></li>
-<li class="l3"><a href="#sec-one-layer-one-position"><span class="n"></span><span class="t">One layer, one moment</span></a></li>
-<li class="l2"><a href="#sec-discussion"><span class="n">04</span><span class="t">What this means for trusting the tools</span></a></li>
-<li class="l3"><a href="#sec-open-questions"><span class="n"></span><span class="t">What we still don’t know</span></a></li>
-<li class="l2"><a href="#sec-closing-thoughts"><span class="n">05</span><span class="t">A microscope needs familiar shapes</span></a></li>
+<li class="l2"><a href="#sec-introduction"><span class="n">00</span><span class="t">Overview</span></a></li>
+<li class="l2"><a href="#sec-writing-a-calculator-into-a-chat-model"><span class="n">01</span><span class="t">Building the calculator</span></a></li>
+<li class="l3"><a href="#sec-preserving-the-model"><span class="n"></span><span class="t">Preserving the original model</span></a></li>
+<li class="l2"><a href="#sec-pointing-the-microscope-at-it"><span class="n">02</span><span class="t">Grading attribution methods</span></a></li>
+<li class="l3"><a href="#sec-when-the-gradient-goes-flat"><span class="n"></span><span class="t">Attribution patching</span></a></li>
+<li class="l3"><a href="#sec-does-integrated-gradients-fix-it"><span class="n"></span><span class="t">Integrated gradients</span></a></li>
+<li class="l3"><a href="#sec-what-patching-cannot-see"><span class="n"></span><span class="t">Blind spots of activation patching</span></a></li>
+<li class="l2"><a href="#sec-a-switch-we-wrote-vectors-we-didn-t"><span class="n">03</span><span class="t">Case study: hand-written mode switches</span></a></li>
+<li class="l3"><a href="#sec-reading-the-vectors-as-words"><span class="n"></span><span class="t">Reading the vectors as tokens</span></a></li>
+<li class="l3"><a href="#sec-one-layer-one-position"><span class="n"></span><span class="t">Localizing the effect</span></a></li>
+<li class="l2"><a href="#sec-discussion"><span class="n">04</span><span class="t">Discussion</span></a></li>
+<li class="l3"><a href="#sec-open-questions"><span class="n"></span><span class="t">Open questions</span></a></li>
+<li class="l2"><a href="#sec-closing-thoughts"><span class="n">05</span><span class="t">Conclusion</span></a></li>
 </ol>
 </nav>
-<h2 id="sec-introduction"><span class="n">00</span>A model that can’t multiply</h2>
+<h2 id="sec-introduction"><span class="n">00</span>Overview</h2>
 
 
 <p>Ask Qwen2.5-0.5B-Instruct<a class="sn" href="#ref-14" style="--n:'14'"></a><span class="note" style="--n:'14'" title="Qwen2.5 Technical Report"><a href="#ref-14">Qwen Team, 2024</a></span> what 7311 × 7890 is, and you get a confident, tidy answer in exactly the right format. Only the number is wrong (<a class="figref" href="#figure-1">Figure 1</a>). That is typical for a model this small. On products whose larger number has three to six digits, it gets 2 out of 120 right.</p>
@@ -778,7 +779,7 @@ So, the result of \(7311 \times 7890\) is **<mark class="ok">57683790</mark>**.<
 </ul>
 </div>
 
-<h2 id="sec-writing-a-calculator-into-a-chat-model"><span class="n">01</span>Building a calculator from the model’s own parts</h2>
+<h2 id="sec-writing-a-calculator-into-a-chat-model"><span class="n">01</span>Building the calculator</h2>
 
 <p>Why is exact arithmetic hard for a transformer? It is built for soft, approximate computation, and three of its parts get in the way. Before every layer, a normalization step (RMSNorm) divides each token’s vector by its overall size, so a stored number doesn’t stay put. The MLPs, small networks inside each layer that work on one token at a time, use a smooth curve called SiLU, but arithmetic needs exact products and sharp yes-or-no decisions. And attention, which lets a token look back at earlier tokens, finds them by similarity and by a rotary position code<a class="sn" href="#ref-18" style="--n:'18'"></a><span class="note" style="--n:'18'" title="RoFormer: Enhanced Transformer with Rotary Position Embedding"><a href="#ref-18">Su et al, 2021</a></span>. A calculator needs “the token exactly four places back.”</p>
 
@@ -930,6 +931,7 @@ So, the result of \(7311 \times 7890\) is **<mark class="ok">57683790</mark>**.<
 <figcaption><span class="fl" data-fig="explorer">Figure 5</span><b>Learned weights and written weights, side by side.</b> The written block is every nonzero row and column of one matrix in the graft; the learned block is the same-sized top-left corner of the same matrix type, in the same layer of the original Qwen. Black is positive and orange negative, on a log scale; on the written side, pale cells are exactly 0.</figcaption>
 </figure>
 
+<h3 id="sec-preserving-the-model">Preserving the original model</h3>
 <p>Did the surgery break anything else? Outside of multiplication, the model behaves as it did before. On 16 chat prompts without a product in them, the greedy replies are identical. On the two whose logits (the model’s scores for each possible next token) we saved, they differ by at most 2.8&thinsp;×&thinsp;10<sup>−4</sup>. There is one exception, which we designed in: a reply containing the equation <span class="math">2&thinsp;·&thinsp;1&thinsp;=&thinsp;2</span>. There the calculator takes over and writes the same digit the model would have written.</p>
 
 <p>The same holds at benchmark scale (<a class="figref" href="#figure-6">Figure 6</a>). On every MMLU and ARC-Challenge question, the model with the calculator, and with the slash commands from section 03, picks the same answer as the released model. On grade-school word problems the replies are identical 97% of the time. Where they differ, the calculator sometimes helps and sometimes hurts: it turns a wrong <span class="math">165 × 12 = 2040</span> into 1980, but in <span class="math">80 ÷ 4 × 3</span> it sees only <span class="math">4 × 3</span> and writes 12 where the model had written 20.</p>
@@ -943,7 +945,7 @@ So, the result of \(7311 \times 7890\) is **<mark class="ok">57683790</mark>**.<
 
 <p>So now we have a real chat model with a circuit in which every part has a known job. Time to see what the tools say about it.</p>
 
-<h2 id="sec-pointing-the-microscope-at-it"><span class="n">02</span>Pointing the microscope at a known answer</h2>
+<h2 id="sec-pointing-the-microscope-at-it"><span class="n">02</span>Grading attribution methods</h2>
 
 <p>The most trusted tool for finding the parts of a model that matter is activation patching<a class="sn" href="#ref-23" style="--n:'23'"></a><span class="note" style="--n:'23'" title="Towards Best Practices of Activation Patching in Language Models: Metrics and Methods"><a href="#ref-23">Zhang &amp; Nanda, 2024</a></span>. It is easiest to explain with our own prompts. We take two prompts that differ in one digit, and cut each off right where the model is about to write the first digit of the answer:</p>
 
@@ -979,7 +981,7 @@ So, the result of \(7311 \times 7890\) is **<mark class="ok">57683790</mark>**.<
 
 <p>Layers 4 to 9, which turn the column sums into carries, score between 0.12 and 0.37, and that average hides something odd. Take layer 5. In 4 of the 24 pairs, patching it brings back the clean answer. In 12 the corrupted answer stays. In the other 8 it lands halfway, and in the three we decoded, the model writes a third digit that is neither: for 664 × 48153 against 664 × 28153, the clean run writes a 3, the corrupted run a 1, and the patched run a 2. It comes from a mix the model would never see on its own: correct carries from one layer, wrong numbers everywhere else. When steps run one after another, one step’s contribution only makes sense relative to the steps around it.</p>
 
-<h3 id="sec-when-the-gradient-goes-flat">The shortcut that sees nothing</h3>
+<h3 id="sec-when-the-gradient-goes-flat">Attribution patching</h3>
 
 <p>Activation patching needs one extra run of the model per block, which adds up for big models and many prompts. So people often use a shortcut called attribution patching<a class="sn" href="#ref-11" style="--n:'11'"></a><span class="note" style="--n:'11'" title="Attribution Patching: Activation Patching At Industrial Scale"><a href="#ref-11">Nanda, 2022</a></span>. It asks a cheaper question: how much would the answer move if this block were nudged a little? That is what a gradient measures, and one backward pass gives it for every block at once. Multiply each block’s gradient by how much its output differs between the two prompts, and you get a straight-line guess at what patching that block would do: it assumes the answer changes in proportion to the change in the block.</p>
 
@@ -1000,7 +1002,7 @@ So, the result of \(7311 \times 7890\) is **<mark class="ok">57683790</mark>**.<
 
 <p>Put together, the two models suggest where gradients can be trusted: close to the output, where the computation is nearly linear. Choosing which digit to write, which token to copy, or whether to carry a one is the kind of job that flat-then-steep nonlinearities do. That is where the shortcut breaks.</p>
 
-<h3 id="sec-does-integrated-gradients-fix-it">Can a smarter shortcut rescue it?</h3>
+<h3 id="sec-does-integrated-gradients-fix-it">Integrated gradients</h3>
 
 <p>If the slope at one point misleads, why not look at many points? That is the standard fix. Integrated gradients walks along a path from the corrupted input to the clean one, takes the gradient at many points along the way, and averages them<a class="sn" href="#ref-19" style="--n:'19'"></a><span class="note" style="--n:'19'" title="Axiomatic Attribution for Deep Networks"><a href="#ref-19">Sundararajan, Taly &amp; Yan, 2017</a></span>. Circuit discovery uses the same idea under the name EAP-IG<a class="sn" href="#ref-5" style="--n:'5'"></a><span class="note" style="--n:'5'" title="Have Faith in Faithfulness: Going Beyond Circuit Overlap When Finding Model Mechanisms"><a href="#ref-5">Hanna, Pezzelle &amp; Belinkov, 2024</a></span>. We ran it on both models, averaging over 1, 5, 20 or 50 points (<a class="figref" href="#figure-10">Figure 10</a>). With one point, it is exactly attribution patching.</p>
 
@@ -1017,7 +1019,7 @@ So, the result of \(7311 \times 7890\) is **<mark class="ok">57683790</mark>**.<
 
 <p>Further from the input it gets worse. The carry layers and the blocks that lay out the answer sit behind several steps, which would all have to be mid-jump at the same point on the path. Their estimates stay at 0.06 or below. Only the last MLP, which writes the digit straight out with no step in between, comes close.</p>
 
-<h3 id="sec-what-patching-cannot-see">The parts patching never sees</h3>
+<h3 id="sec-what-patching-cannot-see">Blind spots of activation patching</h3>
 
 <p>Patching can also follow the information token by token. Instead of patching whole blocks, we patch the residual stream at one token as it enters one layer (<a class="figref" href="#figure-11">Figure 11</a>). In the grafted model, the route is the one we designed. The first attention layer copies the changed digit onto the <code>=</code> sign. It sits there through all of the arithmetic, and the attention in layer 13 moves it to the position where the answer is written. The original model leaves the digit where it is for 16 layers, then moves it straight to the last token.</p>
 
@@ -1034,7 +1036,7 @@ So, the result of multiplying 7311 by 7890 is 0.</p><cite>Grafted model, layer 1
 
 <p>So patching finds the parts that carry the difference between two inputs. That is fewer than the parts the computation needs, and which ones you see depends on the difference you chose. Swap parts between two cars that both have a working engine, and you will never learn that the engine matters. Heimersheim and Nanda make this point in general terms; an answer key makes it concrete. If you build a circuit diagram out of patching experiments, you only get the parts that the contrasts you happened to try can reach.</p>
 
-<h2 id="sec-a-switch-we-wrote-vectors-we-didn-t"><span class="n">03</span>A side story: a switch we wrote, vectors we didn’t</h2>
+<h2 id="sec-a-switch-we-wrote-vectors-we-didn-t"><span class="n">03</span>Case study: hand-written mode switches</h2>
 
 <p>The calculator is the easy case: everything about it is written down. Real interpretability work rarely gets that luxury.</p>
 
@@ -1051,7 +1053,7 @@ So, the result of multiplying 7311 by 7890 is 0.</p><cite>Grafted model, layer 1
 
 <p>So for these commands we know exactly when and where each vector goes in, and nothing about what it means. Can the usual tools fill in the meaning?</p>
 
-<h3 id="sec-reading-the-vectors-as-words">Can we read the vectors as words?</h3>
+<h3 id="sec-reading-the-vectors-as-words">Reading the vectors as tokens</h3>
 
 <p>The simplest tool is the logit lens<a class="sn" href="#ref-13" style="--n:'13'"></a><span class="note" style="--n:'13'" title="interpreting GPT: the logit lens"><a href="#ref-13">nostalgebraist, 2020</a></span>. It takes a vector from inside the model and passes it through the model’s last normalization and output layer, as if the model had to speak right there. That tells you which words the vector pushes up. <a class="figref" href="#figure-13">Figure 13</a> does this for each command’s two vectors, summed over the 24 layers.</p>
 
@@ -1083,7 +1085,7 @@ So, the result of multiplying 7311 by 7890 is 0.</p><cite>Grafted model, layer 1
 <figcaption><span class="fl">Figure 14</span><b>The hand-written switch matches or beats a style prompt on three of four commands.</b> An LLM judge (Qwen3.8-27B) scores each reply for style, yes or no, and for quality from 1 to 10, ignoring style. Facts is the share of 50 factual questions whose reply contains the right number. <code>/pirate</code> is the exception: a prompt makes every reply a pirate’s, at a cost to the facts.</figcaption>
 </figure>
 
-<h3 id="sec-one-layer-one-position">One layer, one moment</h3>
+<h3 id="sec-one-layer-one-position">Localizing the effect</h3>
 
 <p>Because we know exactly where the <code>/zh</code> weights are, we can take them apart, a bit like pulling fuses one at a time. <a class="figref" href="#figure-15">Figure 15</a> keeps them in a single original layer, or in all layers but one. It then measures how likely the reply is to start with a Chinese token, averaged over 38 English development questions.</p>
 
@@ -1105,7 +1107,7 @@ So, the result of multiplying 7311 by 7890 is 0.</p><cite>Grafted model, layer 1
 
 <p>So the language gets chosen once. The first-word vector makes the first token Chinese, and from then on the reply so far keeps the model in Chinese. Adding the every-token vector only raises the share of Chinese characters from 0.88 to 0.95. We can say this with confidence only because we know the vectors go in at exactly two kinds of position and nowhere else (<a class="figref" href="#figure-12">Figure 12</a>). In a trained model it is hard even to ask whether a behaviour is decided at one position or kept up at every position, because we rarely know where it enters in the first place.</p>
 
-<h2 id="sec-discussion"><span class="n">04</span>What this means for trusting the tools</h2>
+<h2 id="sec-discussion"><span class="n">04</span>Discussion</h2>
 
 <p>So how did the tools do? In this testbed, activation patching was never wrong about what it measures. The trouble was in reading it: mixed scores when steps run one after another, and blind spots wherever the two prompts don’t differ. Attribution patching was simply wrong about every hand-written block but the last. Integrated gradients fixed it on the trained model and turned it into a lottery on the calculator.</p>
 
@@ -1117,7 +1119,7 @@ So, the result of multiplying 7311 by 7890 is 0.</p><cite>Grafted model, layer 1
 
 <p>There are clear limits. The graft is wasteful and fragile: it triples the parameter count, to 1.52 billion, almost all of them zero, and its exact lookups need float32 arithmetic, so it breaks in bfloat16. Our calculator lives in its own 960 dimensions, apart from everything the original model represents. Trained circuits share dimensions with many other features, packed on top of each other in what is called superposition<a class="sn" href="#ref-2" style="--n:'2'"></a><span class="note" style="--n:'2'" title="Toy Models of Superposition"><a href="#ref-2">Elhage et al, 2022</a></span>, so a tool that finds our circuit might still fail on theirs. The flatness that defeats attribution patching is extreme by design. And the experiments are small: one model, 24 prompt pairs for patching, and 38 questions for the commands.</p>
 
-<h3 id="sec-open-questions">What we still don’t know</h3>
+<h3 id="sec-open-questions">Open questions</h3>
 <ul>
 <li>Can a hand-written circuit share dimensions with the model’s own features and still be exact? That would test the case that matters most.</li>
 <li>Attribution graphs built from transcoders explain addition in Claude 3.5 Haiku as two pathways, one estimating the rough size of the sum and one getting the last digit right<a class="sn" href="#ref-10" style="--n:'10,1'"></a><span class="note" style="--n:'10,1'" title="On the Biology of a Large Language Model; Circuit Tracing: Revealing Computational Graphs in Language Models"><a href="#ref-10">Lindsey et al, 2025</a>; <a href="#ref-1">Ameisen et al, 2025</a></span>. Would they recover a multiplier we wrote, carries and all?</li>
@@ -1125,7 +1127,7 @@ So, the result of multiplying 7311 by 7890 is 0.</p><cite>Grafted model, layer 1
 <li>How saturated are trained models in practice? If some of their circuits make decisions as sharply as ours, gradient-based circuit discovery would miss them in the same way, and we would not know.</li>
 </ul>
 
-<h2 id="sec-closing-thoughts"><span class="n">05</span>A microscope needs familiar shapes</h2>
+<h2 id="sec-closing-thoughts"><span class="n">05</span>Conclusion</h2>
 
 <p>Trained models are messy, so it is tempting to conclude that interpretability methods can only be tested on toys or taken on trust. We don’t think those are the only options. A pretrained model has room for circuits we fully understand, sitting next to the ones we don’t. Learned arithmetic in language models looks like a bag of heuristics<a class="sn" href="#ref-12" style="--n:'12'"></a><span class="note" style="--n:'12'" title="Arithmetic Without Algorithms: Language Models Solve Math With a Bag of Heuristics"><a href="#ref-12">Nikankin et al, 2025</a></span>, and recent work trains models sparse enough that their circuits can be read<a class="sn" href="#ref-3" style="--n:'3'"></a><span class="note" style="--n:'3'" title="Weight-sparse transformers have interpretable circuits"><a href="#ref-3">Gao et al, 2025</a></span>. Writing the circuit by hand is the far end of that range, where the explanation comes first and the weights follow from it. Before we trust a microscope on a model where nobody knows the answer, we should point it at one where somebody does.</p>
 
