@@ -666,6 +666,34 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
   blockquote.pull p { font-size: 11px; }
 }
 </style>
+<style id="tldr-chart">
+/* at-a-glance chart beside the summary; dark on screen, ink on paper */
+.tldr { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 0 56px; align-items: start; margin: 36px 0 0; }
+.tldr > .lead { margin-top: 0; }
+.tldr-chart { --hc-ink: #fff; --hc-muted: #A09E97; --hc-bar: #5B5A55; --hc-line: rgba(255,255,255,.18); --hc-ours: #F7611D;
+              border-top: 1px solid var(--hc-line); padding-top: 14px; }
+.tldr-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tldr-chart .t { fill: var(--hc-muted); font: 500 11px var(--mono); letter-spacing: .06em; }
+.tldr-chart .l { fill: var(--hc-ink); font: 400 13px var(--sans); }
+.tldr-chart .v { fill: var(--hc-ink); font: 500 12px var(--mono); font-feature-settings: "tnum"; }
+.tldr-chart .v.o { fill: var(--hc-ours); }
+.tldr-chart .m { fill: var(--hc-muted); font: 400 11.5px var(--sans); }
+.tldr-chart .bar { fill: var(--hc-bar); }
+.tldr-chart .bar.o { fill: var(--hc-ours); }
+.tldr-chart .bar.w { fill: var(--hc-ink); }
+.tldr-chart .ref { fill: none; stroke: var(--hc-muted); stroke-dasharray: 3 3; }
+.tldr-chart .x { stroke: var(--hc-muted); stroke-width: 1.5; }
+.tldr-chart .track { fill: var(--hc-line); }
+@media screen and (max-width: 1100px) {
+  .tldr { grid-template-columns: minmax(0, 1fr); }
+  .tldr-chart { margin-top: 36px; max-width: 520px; }
+}
+@media print {
+  .tldr { display: block; margin-top: 4mm; }
+  .tldr-chart { --hc-ink: #000; --hc-muted: #5B5A55; --hc-bar: #A09E97; --hc-line: rgba(0,0,0,.14);
+                max-width: 110mm; margin-top: 5mm; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -675,7 +703,7 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
 <div class="print-brand"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span>dyalect</span></div>
 <div class="kicker"><span class="n">Interpretability</span>Qwen2.5-0.5B-Instruct · hand-written weights</div>
 <h1>a hand-written <span class="hl">answer key</span> inside a real model.</h1>
-<p class="lead">Ask Qwen2.5-0.5B, a small chat model, 120 multiplications whose larger number has three to six digits, and it gets 2 right. So we wrote a calculator into it by hand: 16 new layers in front of the model, whose own 24 layers still compute exactly what they did before. The model gained exact multiplication and kept the behaviour it had: on 15,211 multiple-choice benchmark questions it picks the same answer every time. That gave us something rare, a real model with a circuit whose true answer we know. Then we pointed the standard tools at it, and attribution patching missed 13 of the 14 blocks that activation patching, the trusted method, shows doing the work. If a circuit we wrote down can slip past them, what about the circuits nobody wrote down?</p>
+<div class="tldr"><p class="lead">Ask Qwen2.5-0.5B, a small chat model, 120 multiplications whose larger number has three to six digits, and it gets 2 right. So we wrote a calculator into it by hand: 16 new layers in front of the model, whose own 24 layers still compute exactly what they did before. The model gained exact multiplication and kept the behaviour it had: on 15,211 multiple-choice benchmark questions it picks the same answer every time. That gave us something rare, a real model with a circuit whose true answer we know. Then we pointed the standard tools at it, and attribution patching missed 13 of the 14 blocks that activation patching, the trusted method, shows doing the work. If a circuit we wrote down can slip past them, what about the circuits nobody wrote down?</p><div class="tldr-chart" role="img" aria-label="Products right out of 120: Qwen2.5-0.5B 2, with 16 hand-written layers 90. Benchmark answers unchanged on 15,211 of 15,211 MMLU and ARC-Challenge questions. Hand-written blocks found, of 14: activation patching 14, attribution patching 1."><svg viewBox="0 0 400 204"><text x="0" y="10" class="t">PRODUCTS RIGHT, OUT OF 120</text><text x="0" y="35.0" class="l">Qwen2.5-0.5B</text><rect x="150" y="24" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="24" width="3.0" height="14" class="bar"/><text x="338" y="35.0" class="v">2</text><text x="0" y="59.0" class="l">+ 16 hand-written layers</text><rect x="150" y="48" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="48" width="135.0" height="14" class="bar o"/><text x="338" y="59.0" class="v o">90</text><text x="0" y="88" class="t">BENCHMARK ANSWERS UNCHANGED</text><text x="0" y="113.0" class="l">MMLU + ARC-Challenge</text><rect x="150" y="102" width="120" height="14" class="track" opacity=".35"/><rect x="150" y="102" width="120.0" height="14" class="bar w"/><text x="278" y="113.0" class="v">15,211 / 15,211</text><text x="0" y="142" class="t">HAND-WRITTEN BLOCKS FOUND, OF 14</text><text x="0" y="167.0" class="l">Activation patching</text><rect x="150" y="156" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="156" width="180.0" height="14" class="bar w"/><text x="338" y="167.0" class="v">14</text><text x="0" y="191.0" class="l">Attribution patching</text><rect x="150" y="180" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="180" width="12.9" height="14" class="bar o"/><text x="338" y="191.0" class="v o">1</text></svg></div></div>
 <div class="byline"><b>Dyalect Research</b> · Nov 7, 2026 · 32 min read<a class="pdf" href="paper.pdf" download="dyalect_blog_a-hand-written-answer-key-inside-a-real-model.pdf">PDF ↓</a></div>
 </div>
 </header>

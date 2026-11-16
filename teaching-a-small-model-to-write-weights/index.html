@@ -990,6 +990,34 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
   blockquote.pull p { font-size: 15px; }
 }
 </style>
+<style id="tldr-chart">
+/* at-a-glance chart beside the summary; dark on screen, ink on paper */
+.tldr { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 0 56px; align-items: start; margin: 36px 0 0; }
+.tldr > .lead { margin-top: 0; }
+.tldr-chart { --hc-ink: #fff; --hc-muted: #A09E97; --hc-bar: #5B5A55; --hc-line: rgba(255,255,255,.18); --hc-ours: #F7611D;
+              border-top: 1px solid var(--hc-line); padding-top: 14px; }
+.tldr-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tldr-chart .t { fill: var(--hc-muted); font: 500 11px var(--mono); letter-spacing: .06em; }
+.tldr-chart .l { fill: var(--hc-ink); font: 400 13px var(--sans); }
+.tldr-chart .v { fill: var(--hc-ink); font: 500 12px var(--mono); font-feature-settings: "tnum"; }
+.tldr-chart .v.o { fill: var(--hc-ours); }
+.tldr-chart .m { fill: var(--hc-muted); font: 400 11.5px var(--sans); }
+.tldr-chart .bar { fill: var(--hc-bar); }
+.tldr-chart .bar.o { fill: var(--hc-ours); }
+.tldr-chart .bar.w { fill: var(--hc-ink); }
+.tldr-chart .ref { fill: none; stroke: var(--hc-muted); stroke-dasharray: 3 3; }
+.tldr-chart .x { stroke: var(--hc-muted); stroke-width: 1.5; }
+.tldr-chart .track { fill: var(--hc-line); }
+@media screen and (max-width: 1100px) {
+  .tldr { grid-template-columns: minmax(0, 1fr); }
+  .tldr-chart { margin-top: 36px; max-width: 520px; }
+}
+@media print {
+  .tldr { display: block; margin-top: 4mm; }
+  .tldr-chart { --hc-ink: #000; --hc-muted: #5B5A55; --hc-bar: #A09E97; --hc-line: rgba(0,0,0,.14);
+                max-width: 110mm; margin-top: 5mm; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -999,7 +1027,7 @@ blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--
 <div class="print-brand"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span>dyalect</span></div>
 <div class="kicker"><span class="n">Weight writing</span>Qwen3.5-0.8B · wake-word detectors</div>
 <h1>we taught a <span class="hl">0.8B model</span> to hand-write part of a neural network.</h1>
-<p class="lead">Could a language model hand-write part of a neural network: 129 numbers, no training allowed? Fable, a frontier model, cracked it by experimenting on the network the way a neuroscientist probes a brain. We turned its method into a procedure and taught a much smaller 0.8B model to run it. Telling the small model the method did nothing; teaching it by example worked. At 2 false alarms per 1,000 other clips, the 0.8B catches 84% of utterances from held-out synthetic voices; Fable catches 78%.</p>
+<div class="tldr"><p class="lead">Could a language model hand-write part of a neural network: 129 numbers, no training allowed? Fable, a frontier model, cracked it by experimenting on the network the way a neuroscientist probes a brain. We turned its method into a procedure and taught a much smaller 0.8B model to run it. Telling the small model the method did nothing; teaching it by example worked. At 2 false alarms per 1,000 other clips, the 0.8B catches 84% of utterances from held-out synthetic voices; Fable catches 78%.</p><div class="tldr-chart" role="img" aria-label="Share of wake words caught at 2 false alarms per 1,000 clips: fine-tuned 0.8B 84.3%, Fable 77.5%, Kimi 70.8%, Qwen 35B 53.3%, untuned 0.8B with the method in its prompt no working detector, trained reference layer 100%."><svg viewBox="0 0 400 198"><text x="0" y="10" class="t">CAUGHT AT 2 FALSE ALARMS PER 1,000 CLIPS</text><text x="0" y="35.0" class="l">0.8B, taught by example</text><rect x="150" y="24" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="24" width="151.7" height="14" class="bar o"/><text x="338" y="35.0" class="v o">84.3%</text><text x="0" y="59.0" class="l">Fable 5.1</text><rect x="150" y="48" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="48" width="139.5" height="14" class="bar w"/><text x="338" y="59.0" class="v">77.5%</text><text x="0" y="83.0" class="l">Kimi K3</text><rect x="150" y="72" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="72" width="127.4" height="14" class="bar"/><text x="338" y="83.0" class="v">70.8%</text><text x="0" y="107.0" class="l">Qwen3.6 35B-A3B</text><rect x="150" y="96" width="180" height="14" class="track" opacity=".35"/><rect x="150" y="96" width="95.9" height="14" class="bar"/><text x="338" y="107.0" class="v">53.3%</text><text x="0" y="131.0" class="l">0.8B, method in prompt</text><rect x="150" y="120" width="180" height="14" class="track" opacity=".35"/><path d="M 152 122 l 10 10 M 152 132 l 10 -10" class="x"/><text x="170" y="131.0" class="m">no working detector</text><text x="0" y="155.0" class="l">Trained layer (reference)</text><rect x="150" y="144" width="180" height="14" class="track" opacity=".35"/><rect x="150.5" y="144.5" width="179.0" height="13" class="ref"/><text x="338" y="155.0" class="v">100%</text><text x="0" y="176" class="m">Held-out synthetic voices. The trained layer learns from labels,</text><text x="0" y="191" class="m">which the no-training rule forbids the language models.</text></svg></div></div>
 <div class="stats">
       <div class="stat"><span class="k">Headline result</span><b>84.3%</b><span>Fine-tuned 0.8B at 2 false alarms per 1,000 clips</span></div>
       <div class="stat"><span class="k">Fable 5.1</span><b>77.5%</b><span>One frontier-model run at that same budget</span></div>
