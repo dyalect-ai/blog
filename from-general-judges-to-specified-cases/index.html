@@ -1047,14 +1047,32 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
 .cg-r { border-top: 1px solid #000; padding-top: 10px; margin-top: 6px; font-size: 14px; text-align: left; }
 .cg-r .bad { color: var(--rose); margin-right: 8px; font-family: var(--mono); }
 .findings ol.rules { margin: 0; padding-left: 1.4em; } .findings ol.rules li { margin: .4em 0; }
+.cg-c .miss { color: var(--rose); text-decoration: underline; text-decoration-color: var(--rose); text-underline-offset: 3px; }
+ul.ck { list-style: none; margin: 0; padding: 0; font-size: 13.5px; line-height: 1.45; text-align: left; }
+ul.ck li { position: relative; padding-left: 20px; margin: 0 0 3px; }
+ul.ck li::before { content: "✓"; position: absolute; left: 0; color: var(--g600); font-family: var(--mono); }
+ul.ck li.no { color: var(--rose); font-weight: 500; }
+ul.ck li.no::before { content: "✗"; color: var(--rose); }
+table.gt td.num { font-family: var(--mono); font-size: 12px; color: var(--g600); white-space: nowrap; width: 3em; }
+table.gt.faults td:first-child { font-weight: 400; color: var(--g600); }
+table.gt.faults td:first-child b { color: #000; font-weight: 600; display: block; }
+table.gt.tri td:not(:first-child), table.gt.tri th:not(:first-child) { text-align: center; width: 13%; }
+table.gt.tri td:not(:first-child) { font-size: 15px; }
+table.gt.tri td[aria-label="yes"] { color: #000; } table.gt.tri td[aria-label="no"] { color: var(--g400, #A09E97); }
+table.gt.tri tr.look td { color: var(--g600); border-bottom: 1px solid #000; }
+table.gt.tri tr.look td:first-child span { display: block; font: 500 10.5px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g600); margin-top: 2px; }
+table.gt.jobs td:nth-child(2), table.gt.jobs td:nth-child(3) { white-space: nowrap; width: 12%; }
 @media screen and (max-width: 900px) { .cg { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cg-g { grid-template-columns: 1fr; } }
 @media screen and (max-width: 560px) {
   .cg { grid-template-columns: 1fr; }
   table.gt thead { display: none; }
   table.gt tr { display: block; border-top: 1px solid var(--g100); padding: 8px 0; }
   table.gt td { display: block; border: 0; padding: 2px 0; width: auto !important; }
+  table.gt td[data-l]::before { content: attr(data-l) " · "; font: 500 10.5px/1.6 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g600); }
+  table.gt.tri thead { display: table-header-group; } table.gt.tri tr { display: table-row; } table.gt.tri td { display: table-cell; padding: 8px 6px 8px 0; border-top: 1px solid var(--g100); }
+  table.gt.tri td[data-l]::before { content: none; }
 }
-@media print { .cg { grid-template-columns: repeat(4, 1fr); gap: 3mm; } .cg-g { grid-template-columns: repeat(3, 1fr); gap: 3mm; } table.gt { font-size: 9pt; } .cg-c, .cg-g p, .cg-r { font-size: 8.5pt; } }
+@media print { ul.ck { font-size: 8.5pt; } .cg { grid-template-columns: repeat(4, 1fr); gap: 3mm; } .cg-g { grid-template-columns: repeat(3, 1fr); gap: 3mm; } table.gt { font-size: 9pt; } .cg-c, .cg-g p, .cg-r { font-size: 8.5pt; } }
 </style>
 
 </head>
@@ -1066,14 +1084,14 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
 <div class="print-brand"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span>dyalect</span></div>
 <div class="kicker"><span class="n">Evaluation</span>From general judges to specified cases</div>
 <h1>Decide what good means <span class="hl">before the run</span>, not while grading it.</h1>
-<div class="tldr"><p class="lead">Many teams test an AI system with a judge that reads the whole run and gives a score. That is quick to start and fine for finding failures, but the score moves without a reason, hides failures inside an average, and cannot approve a release or serve as a training reward. A mature evaluation writes down what good means before the run, checks what the system actually left behind, asks a judge one narrow question at a time, and measures the judge against people. What the two stages are, one worked case, and six questions to find where you are.</p></div>
+<div class="tldr"><p class="lead">Many teams test an AI system with a judge model that reads the whole run and gives a score. It is quick to set up and good at finding failures. But the score can move for no reason anyone can name, an average hides the one thing that went wrong, and you cannot approve a release or train a model on it. A mature evaluation writes down what good means before the run, checks what the system actually left behind, asks a judge one narrow question at a time, and measures that judge against people. This post sets out the two stages, grades one case both ways, and ends with six questions to place your own team.</p><div class="tldr-chart" role="img" aria-label="Illustration. The same run read two ways: as a judge score it is 0.95, above a pass mark of 0.85, so it passes; as checks, 18 of 19 pass, so it fails. Ten cases run five times each: a single attempt passes 82% of the time, all five attempts pass for 60% of cases."><svg viewBox="0 0 400 206"><text x="0" y="10" class="t">ONE RUN, TWO RULERS</text><text x="0" y="35" class="l">Judge score</text><rect x="150" y="24" width="180" height="14" class="track"/><rect x="150" y="24" width="171" height="14" class="bar w"/><line x1="303" x2="303" y1="20" y2="42" class="ref"/><text x="338" y="35" class="v">PASS</text><text x="0" y="59" class="l">Checks, all must pass</text><rect x="150" y="48" width="180" height="14" class="track"/><rect x="150" y="48" width="170.5" height="14" class="bar o"/><text x="338" y="59" class="v o">FAIL</text><text x="0" y="78" class="m">0.95 against a 0.85 pass mark; 18 of 19 checks.</text><text x="0" y="112" class="t">TEN CASES, FIVE RUNS EACH</text><text x="0" y="137" class="l">One attempt passes</text><rect x="150" y="126" width="180" height="14" class="track"/><rect x="150" y="126" width="147.6" height="14" class="bar w"/><text x="338" y="137" class="v">82%</text><text x="0" y="161" class="l">All five pass</text><rect x="150" y="150" width="180" height="14" class="track"/><rect x="150" y="150" width="108" height="14" class="bar o"/><text x="338" y="161" class="v o">60%</text><text x="0" y="184" class="m">The gap is the unreliability. Illustrative data,</text><text x="0" y="199" class="m">the worked case and Figure 4 below.</text></svg></div></div>
 <div class="stats">
   <div class="stat"><span class="k">Stage 1</span><b>General judges</b><span>Where most teams are. Right for discovery and monitoring.</span></div>
   <div class="stat"><span class="k">Stage 2</span><b>Specified cases</b><span>Where to get to. The case says what a pass is.</span></div>
-  <div class="stat"><span class="k">The test</span><b>4 questions</b><span>Written before, real state, minimal evidence, measured judge.</span></div>
+  <div class="stat"><span class="k">A run passes</span><b>Every check</b><span>No partial credit. An error is never a pass.</span></div>
   <div class="stat"><span class="k">Where are you</span><b>6 questions</b><span>Answer them for your own evaluation today.</span></div>
 </div>
-<div class="byline"><b>Dyalect Research</b> · Nov 27, 2026 · 17 min read<a class="pdf" href="paper.pdf" download="dyalect_blog_decide-what-good-means-before-the-run-not-while-grading-it.pdf">PDF ↓</a></div>
+<div class="byline"><b>Dyalect Research</b> · Nov 27, 2026 · 19 min read<a class="pdf" href="paper.pdf" download="dyalect_blog_decide-what-good-means-before-the-run-not-while-grading-it.pdf">PDF ↓</a></div>
 </div>
 </header>
 <main id="main"><article class="col">
@@ -1082,7 +1100,7 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
   <ol>
     <li class="l2"><a href="#overview"><span class="n">00</span><span class="t">Overview</span></a></li>
     <li class="l2"><a href="#today"><span class="n">01</span><span class="t">How most teams evaluate today</span></a></li>
-    <li class="l2"><a href="#right"><span class="n">02</span><span class="t">What right looks like</span></a></li>
+    <li class="l2"><a href="#right"><span class="n">02</span><span class="t">What stage 2 looks like</span></a></li>
     <li class="l3"><a href="#evidence"><span class="n"></span><span class="t">Small questions, small evidence</span></a></li>
     <li class="l2"><a href="#shift"><span class="n">03</span><span class="t">Seven shifts</span></a></li>
     <li class="l2"><a href="#pitfalls"><span class="n">04</span><span class="t">Pitfalls</span></a></li>
@@ -1100,9 +1118,9 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
 </nav>
 
 <h2 id="overview"><span class="n">00</span>Overview</h2>
-<p>Most teams that test an AI system today do it with a judge: another model reads the whole run, works out what success means, and gives a score. The score moves from 0.87 to 0.81 and nobody can say why. Did the system get worse, or did the judge read it differently?</p>
-<p>A more mature evaluation moves the decision. It decides what a good result is <em>before</em> the run, inside each test case, and grading only checks (<a class="figref" href="#figure-1">Figure 1</a>). The system runs for real from a known starting state. Code checks what it left behind. A judge answers one narrow yes/no question at a time, and only after it has been measured against people.</p>
-<p>We call the two ways <b>stage 1</b>, general judges, and <b>stage 2</b>, specified cases. Stage 1 is a sensible place to start and the right tool for two jobs: finding out how a new system fails, and watching live traffic. It is not a sound basis for approving a release, and its score should never be the reward a model is trained on. This post explains why, shows what stage 2 looks like with one worked case, and ends with six questions that tell you where you are.</p>
+<p>Most teams that test an AI system today do it with a judge<a class="sn" href="#ref-4" style="--n:'4'"></a><span class="note" style="--n:'4'" title="LLM-as-a-judge"><a href="#ref-4">Zheng et al., 2023</a></span>: another model reads the whole run, works out what success means, and gives a score. The score moves from 0.87 to 0.81 and nobody can say why. Did the system get worse, or did the judge read it differently?</p>
+<p>A more mature evaluation moves that decision. It writes down what a good result is <em>before</em> the run, inside each test case, so grading only has to check (<a class="figref" href="#figure-1">Figure 1</a>). The system runs for real from a known starting state. Code checks what it left behind. A judge answers one narrow yes/no question at a time, and only after it has been measured against people.</p>
+<p>We call the two ways <b>stage 1</b>, general judges, and <b>stage 2</b>, specified cases. Stage 1 is a sensible place to start and the right tool for two jobs: finding out how a new system fails, and watching live traffic. It is not a sound basis for approving a release, and its score should never be the reward a model is trained on. Below: why, what stage 2 looks like on one worked case, and six questions that tell you which stage you are in.</p>
 
 <figure id="figure-1" class="wide">
   <div class="scroll"><svg viewBox="0 0 1000 352" width="100%" role="img" aria-label="Two evaluation stages across three moments: before the run, the run, and grading. In stage 1 a judge decides what good means at grading time. In stage 2 the case decides before the run and grading only checks.">
@@ -1125,129 +1143,134 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
 </figure>
 
 <h2 id="today"><span class="n">01</span>How most teams evaluate today</h2>
-<p>A stage 1 evaluation has a handful of example requests, tools that are simulated, and general judges that each read the whole transcript and answer a broad question: was the task completed, was anything made up, was anything unsafe. The scores are averaged and compared with a pass mark. It is quick to set up, takes almost no work per example, and runs on anything, including live traffic. Many teams stay here long after they start making release decisions on the number. Seven things go wrong.</p>
-<ol class="gt-list">
+<p>A stage 1 evaluation has a handful of example requests, tools that are simulated, and general judges that each read the whole transcript and answer a broad question: was the task completed, was anything made up, was anything unsafe. The scores are averaged and compared with a pass mark. It is quick to set up, takes almost no work per example, and runs on anything, including live traffic. Many teams are still here when they start making release decisions on the number, and that is when seven problems show up.</p>
+<ol class="gt-list" id="problems">
   <li><b>Nobody wrote down what should happen.</b> Ask a judge whether a digest of follow-ups is complete and it must decide, run by run, what complete means. Its idea may differ from yours and from its own next idea.</li>
   <li><b>It grades what was said, not what was done.</b> “Done. I’ve created the task” can sit beside zero new tasks in the system. With simulated tools no task could exist, so there is nothing to look at.</li>
   <li><b>Big questions get unstable answers.</b> A broad question over a long answer leaves a judge room to disagree with experts, and with itself: the same bundled question asked twice can change its answer.</li>
-  <li><b>The judge reads everything.</b> Long material makes a judge miss what is there, and a confident “all done” sways it.</li>
+  <li><b>The judge reads everything.</b> Models use the middle of a long input less well than its start and end<a class="sn" href="#ref-2" style="--n:'2'"></a><span class="note" style="--n:'2'" title="Lost in the Middle"><a href="#ref-2">Liu et al., 2023</a></span>, so a judge misses what is there, and a confident “all done” sways it.</li>
   <li><b>A score hides the failure.</b> Four things right and one overlooked restriction scores 0.8. Averaged with other runs it clears the pass mark.</li>
   <li><b>Nobody has measured the judge.</b> Reviewing verdicts you can already see mostly confirms them and never finds what the judge waved through.</li>
   <li><b>A bad number does not say what to fix.</b> “Task completion fell from 0.87 to 0.81” names no behaviour. Somebody has to read transcripts to find out.</li>
 </ol>
-<p>Put together, the number moves and you cannot tell whether the system changed or the judge read it differently. That is acceptable for exploring. It is not a basis for approving a release. The same run can pass as a score and fail as a check (<a class="figref" href="#figure-2">Figure 2</a>).</p>
+<p>Put together, the number moves and you cannot tell whether the system changed or the judge read it differently. That is fine for exploring, but not for approving a release. The same run can pass as a score and fail as a check (<a class="figref" href="#figure-2">Figure 2</a>).</p>
 
 <figure id="figure-2" class="wide">
-  <div class="scroll"><svg viewBox="0 0 1000 250" width="100%" role="img" aria-label="The same run as two readings. As a score it is 0.95, above a pass mark of 0.85. As a set of checks, 18 of 19 pass, one fails, and the run fails: the escalation to the payments team is missing.">
+  <div class="scroll"><svg viewBox="0 0 1000 214" width="100%" role="img" aria-label="The same run read two ways. As a judge score it is 0.95, above a pass mark of 0.85, so it passes. As checks: 6 of 6 code checks pass and 12 of 13 judge rows pass; the failed row is the escalation to the payments team, so the run fails.">
     <text class="chart-title" x="40" y="30">As a score</text>
     <rect x="40" y="60" width="400" height="28" fill="#E8E6E0"/><rect x="40" y="60" width="380" height="28" fill="#1C1C1C"/>
     <line x1="380" x2="380" y1="50" y2="100" stroke="#C4281C" stroke-dasharray="5 4"/><text class="chart-muted" x="380" y="116" text-anchor="middle">pass mark 0.85</text>
     <text class="chart-lab" x="428" y="80" font-weight="600">0.95</text>
-    <text class="chart-muted" x="40" y="150">Passes. Nobody learns that a required follow-up</text><text class="chart-muted" x="40" y="168">was left out.</text>
+    <text class="chart-lab" x="40" y="150" font-weight="600">PASS</text>
+    <text class="chart-muted" x="40" y="172">Nobody learns that a required follow-up was left out.</text>
     <text class="chart-title" x="540" y="30">As a set of checks</text>
-    <g><rect x="540" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="568" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="596" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="624" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="652" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="680" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="708" y="50" width="22" height="22" fill="#C4281C"/><rect x="736" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="764" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="792" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="540" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="568" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="596" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="624" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="652" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="680" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="708" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="736" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="764" y="78" width="22" height="22" fill="#1C1C1C"/></g>
-    <text class="chart-lab" x="540" y="130" style="fill:#C4281C;font-weight:600">FAIL</text>
-    <text class="chart-muted" x="540" y="150">18 of 19 checks pass. The reply leaves out the</text><text class="chart-muted" x="540" y="168">escalation to the payments team. The result says</text><text class="chart-muted" x="540" y="186">what to fix. Everything else was right.</text>
-    <text class="chart-muted" x="40" y="236" font-size="11">Same run, two rulers.</text>
+    <text class="chart-muted" x="540" y="72">Code · 6</text><rect x="640" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="668" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="696" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="724" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="752" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="780" y="56" width="22" height="22" fill="#1C1C1C"/>
+    <text class="chart-muted" x="540" y="106">Judge · 13</text><rect x="640" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="668" y="90" width="22" height="22" fill="#C4281C"/><rect x="696" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="724" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="752" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="780" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="808" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="836" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="864" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="892" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="920" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="948" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="976" y="90" width="22" height="22" fill="#1C1C1C"/>
+    <line x1="707" x2="707" y1="114" y2="126" stroke="#C4281C"/><text class="chart-muted" x="707" y="140" text-anchor="middle" style="fill:#C4281C">payments escalation</text>
+    <text class="chart-lab" x="540" y="172" style="fill:#C4281C;font-weight:600">FAIL</text>
+    <text class="chart-muted" x="584" y="172">18 of 19 pass. The result names the one thing to fix.</text>
   </svg></div>
-  <figcaption><span class="fl">Figure 2</span><b>One missed follow-up passes as 0.95 and fails as a check.</b> The run is the worked case below: six code checks and thirteen yes/no rows, of which exactly one fails. Illustration.</figcaption>
+  <figcaption><span class="fl">Figure 2</span><b>One missed follow-up passes as a score and fails as a set of checks.</b> The run is the worked case in <a class="figref" href="#figure-3">Figure 3</a>: six code checks and thirteen yes/no rows answered by a judge, of which exactly one fails. Illustration.</figcaption>
 </figure>
 
-<h2 id="right"><span class="n">02</span>What right looks like</h2>
+<h2 id="right"><span class="n">02</span>What stage 2 looks like</h2>
 <p>In a stage 2 evaluation every case says what a pass is before anything runs. A case has eight parts, and they split into what the system is given, what the run must leave behind, and what the output must say.</p>
 <div class="gt-wrap"><table class="gt">
 <thead><tr><th>Part</th><th>What it holds</th><th>Checked by</th></tr></thead>
 <tbody>
-<tr><td>Starting state</td><td>Everything the system can see or reach, seeded from synthetic data with the clock fixed</td><td>—</td></tr>
-<tr><td>Request</td><td>What the user asks, worded as a user would, with no hint of the traps</td><td>—</td></tr>
-<tr><td>Must be true afterwards</td><td>The records, files or messages that must exist</td><td>Code</td></tr>
-<tr><td>May change</td><td>What may change without failing the run. Nothing else may</td><td>Code</td></tr>
-<tr><td>May do, must do</td><td>The tools allowed, and the actions needed for the result to be trusted</td><td>Code</td></tr>
-<tr><td>Wanted rows</td><td>Yes/no questions about features the output must have</td><td>A judge</td></tr>
-<tr><td>Unwanted rows</td><td>Yes/no questions about features the output must not have, each with a planted trap</td><td>A judge</td></tr>
-<tr><td>Evidence for each row</td><td>What is needed to answer that row and nothing more</td><td>—</td></tr>
+<tr><td>Starting state</td><td data-l="What it holds">Everything the system can see or reach, seeded from synthetic data with the clock fixed</td><td data-l="Checked by">—</td></tr>
+<tr><td>Request</td><td data-l="What it holds">What the user asks, worded as a user would, with no hint of the traps</td><td data-l="Checked by">—</td></tr>
+<tr><td>Must be true afterwards</td><td data-l="What it holds">The records, files or messages that must exist</td><td data-l="Checked by">Code</td></tr>
+<tr><td>May change</td><td data-l="What it holds">What may change without failing the run. Nothing else may</td><td data-l="Checked by">Code</td></tr>
+<tr><td>May do, must do</td><td data-l="What it holds">The tools allowed, and the actions needed for the result to be trusted</td><td data-l="Checked by">Code</td></tr>
+<tr><td>Wanted rows</td><td data-l="What it holds">Yes/no questions about features the output must have</td><td data-l="Checked by">A judge</td></tr>
+<tr><td>Unwanted rows</td><td data-l="What it holds">Yes/no questions about features the output must not have, each with a planted trap</td><td data-l="Checked by">A judge</td></tr>
+<tr><td>Evidence for each row</td><td data-l="What it holds">What is needed to answer that row and nothing more</td><td data-l="Checked by">—</td></tr>
 </tbody></table></div>
-<p>Here is one case, end to end. A support assistant is asked to review the user’s recent account reviews and write a digest of required and overdue follow-ups. Four reviews are seeded, with traps planted on purpose. The system runs for real against them (<a class="figref" href="#figure-3">Figure 3</a>).</p>
+<p>Take one case from start to finish. A support assistant is asked to review the user’s recent account reviews and write a digest of required and overdue follow-ups. Four reviews are seeded, with traps planted on purpose. The system runs for real against them (<a class="figref" href="#figure-3">Figure 3</a>).</p>
 
 <figure id="figure-3" class="wide">
   <div class="fig-title">One case, graded</div>
-  <div class="fig-sub">Request: “Review my recent account reviews and create a daily digest of required and overdue follow-ups.” Orange tags mark a trap planted on purpose.</div>
+  <div class="fig-sub">Request: “Review my recent account reviews and create a daily digest of required and overdue follow-ups.” Orange rules mark a trap planted on purpose; red marks what the reply left out.</div>
   <div class="cg">
-    <div class="cg-c"><b>A · Billing review</b><span>Re-run the usage report in 3 months</span><span>Escalate to the payments team</span><span>Review the error rate in 2 weeks</span><span class="trap">Upgrade only if the error rate is still high</span><span class="trap">Cause of the duplicate charges not established</span></div>
+    <div class="cg-c"><b>A · Billing review</b><span>Re-run the usage report in 3 months</span><span class="miss">Escalate to the payments team</span><span>Review the error rate in 2 weeks</span><span class="trap">Upgrade only if the error rate is still high</span><span class="trap">Cause of the duplicate charges not established</span></div>
     <div class="cg-c"><b>B · Outage follow-up</b><span>Re-run the health check today</span><span>Open an incident call today</span><span class="trap">An open task already tracks it</span></div>
     <div class="cg-c"><b>C · Hosting migration</b><span>Review in 48 hours</span><span class="trap">The contract forbids any US region, beside a need for a new region</span></div>
     <div class="cg-c"><b>D · Routine review</b><span class="trap">No follow-up needed: tempts an invented one</span></div>
   </div>
   <div class="cg-g">
-    <div><i>Code · 6 checks on what the run did</i><p>The run completed. The trace is complete. Exactly one chat was created. Nothing else changed. Only permitted tools were used. The notes for A, B and C and the open tasks were read.</p></div>
-    <div><i>Judge · 7 wanted rows, one fact each</i><p>The usage report re-run. The payments escalation. The error rate review. The health check today. The incident call today. Outage already tracked. The migration review at 48 hours.</p></div>
-    <div><i>Judge · 6 unwanted rows, one trap each</i><p>No US region. No upgrade now. No plan change. No cause stated as established. No follow-up for review D. No new task for the outage.</p></div>
+    <div><i>Code · 6 checks on what the run did</i><ul class="ck"><li>The run completed</li><li>The trace is complete</li><li>Exactly one chat was created</li><li>Nothing else changed</li><li>Only permitted tools were used</li><li>Notes A, B, C and open tasks were read</li></ul></div>
+    <div><i>Judge · 7 wanted rows, one fact each</i><ul class="ck"><li>Usage report re-run in 3 months</li><li class="no">Escalation to the payments team</li><li>Error rate review in 2 weeks</li><li>Health check today</li><li>Incident call today</li><li>Outage already tracked</li><li>Migration review at 48 hours</li></ul></div>
+    <div><i>Judge · 6 unwanted rows, one trap each</i><ul class="ck"><li>No US region</li><li>No upgrade now</li><li>No plan change</li><li>No cause stated as established</li><li>No follow-up for review D</li><li>No new task for the outage</li></ul></div>
   </div>
   <div class="cg-r"><b class="bad">FAIL</b> One row failed: the reply leaves out the escalation to the payments team. The result names what to fix.</div>
-  <figcaption><span class="fl">Figure 3</span><b>Eighteen of nineteen checks pass and the run fails.</b> Every row is one fact, anchored in the seeded data. Illustration; all data is invented.</figcaption>
+  <figcaption><span class="fl">Figure 3</span><b>Eighteen of nineteen checks pass and the run fails.</b> Every row is one fact, anchored in the seeded data; ✓ passed, ✗ failed. Illustration; all data is invented.</figcaption>
 </figure>
 
-<p>Three decisions make this work. <b>Code decides everything code can decide:</b> counts, exact values, which tools were used, what changed. It gives the same answer every time at no cost. <b>A judge answers one row per call:</b> one yes/no question about one fact, shown only the evidence that question needs. <b>A run passes only if every check passes.</b> There is no partial credit and no weighted average, and the verdict is one of three: PASS, FAIL with the name of the check that failed, or ERROR, meaning it could not be graded. An error is never a pass, and a run in which nothing was checked is never a pass.</p>
+<p>The grading rests on three choices. <b>Code decides everything code can decide:</b> counts, exact values, which tools were used, what changed. It gives the same answer every time at no cost. <b>A judge answers one row per call:</b> one yes/no question about one fact, shown only the evidence that question needs. <b>A run passes only if every check passes.</b> There is no partial credit and no weighted average, and the verdict is one of three: PASS, FAIL with the name of the check that failed, or ERROR, meaning it could not be graded. An error is never a pass, and a run in which nothing was checked is never a pass.</p>
 
 <h3 id="evidence">Small questions, small evidence</h3>
 <p>In stage 1 a judge is given one big question and everything as evidence: the whole conversation, every tool call, all four notes. In stage 2 the question “does the reply include the escalation to the payments team?” is shown the reply and the note for review A, and nothing else. There is no confident “all done” in view to sway it, and less to overlook. Any single verdict can be checked by an expert in under a minute.</p>
-<p>That last property is what makes it possible to <em>measure the judge</em>. People answer a sample of the same rows, on the same evidence, without seeing the judge’s answer. If they agree with the judge as well as they agree with each other, the judge is trusted to gate. If not, the disagreement is a row to look at, not a number to average away.</p>
+<p>Because a person can check a verdict that fast, the judge itself can be <em>measured</em>. People answer a sample of the same rows, on the same evidence, without seeing the judge’s answer. If they agree with the judge as well as they agree with each other, the judge is trusted to gate. If not, the disagreement is a row to look at, not a number to average away.</p>
 
 <h2 id="shift"><span class="n">03</span>Seven shifts, all in one direction</h2>
-<p>Each shift answers one of the seven faults above.</p>
+<p>Between them the seven shifts answer the seven problems in section 01. The last column gives the number of the problem each one fixes.</p>
 <div class="gt-wrap"><table class="gt">
-<thead><tr><th>From (stage 1)</th><th>To (stage 2)</th><th>Because</th></tr></thead>
+<thead><tr><th>From (stage 1)</th><th>To (stage 2)</th><th>Because</th><th>Fixes</th></tr></thead>
 <tbody>
-<tr><td>Design effort goes into judges</td><td>Design effort goes into cases</td><td>A general judge has to guess what success means for each run. A case states it.</td></tr>
-<tr><td>Simulated tools</td><td>The real system on seeded data</td><td>Nothing can be verified against a simulation that changes nothing.</td></tr>
-<tr><td>Grade the transcript</td><td>Grade what the run left behind</td><td>The system’s own account of its work is not evidence.</td></tr>
-<tr><td>One broad question</td><td>One yes/no question about one fact, and code wherever code can decide</td><td>Small questions get stable answers. Code gives the same answer every time.</td></tr>
-<tr><td>The judge reads the whole run</td><td>The judge sees only what its question needs</td><td>Less to be swayed by, less to miss, and a person can check it quickly.</td></tr>
-<tr><td>Scores and thresholds</td><td>Pass or fail: every check passed</td><td>One wrong amount spoils the output. An average hides it.</td></tr>
-<tr><td>Trust the judge</td><td>Measure the judge against people answering blind</td><td>A judge is an instrument, and instruments are calibrated.</td></tr>
+<tr><td>Design effort goes into judges</td><td data-l="To (stage 2)">Design effort goes into cases</td><td data-l="Because">A general judge has to guess what success means for each run. A case states it.</td><td class="num" data-l="Fixes">1</td></tr>
+<tr><td>Simulated tools</td><td data-l="To (stage 2)">The real system on seeded data</td><td data-l="Because">Nothing can be verified against a simulation that changes nothing.</td><td class="num" data-l="Fixes">2</td></tr>
+<tr><td>Grade the transcript</td><td data-l="To (stage 2)">Grade what the run left behind</td><td data-l="Because">The system’s own account of its work is not evidence.</td><td class="num" data-l="Fixes">2</td></tr>
+<tr><td>One broad question</td><td data-l="To (stage 2)">One yes/no question about one fact, and code wherever code can decide</td><td data-l="Because">Small questions get stable answers. Code gives the same answer every time.</td><td class="num" data-l="Fixes">3</td></tr>
+<tr><td>The judge reads the whole run</td><td data-l="To (stage 2)">The judge sees only what its question needs</td><td data-l="Because">Less to be swayed by, less to miss, and a person can check it quickly.</td><td class="num" data-l="Fixes">4</td></tr>
+<tr><td>Scores and thresholds</td><td data-l="To (stage 2)">Pass or fail: every check passed</td><td data-l="Because">One wrong amount spoils the output. An average hides it; a named failed check says what to fix.</td><td class="num" data-l="Fixes">5, 7</td></tr>
+<tr><td>Trust the judge</td><td data-l="To (stage 2)">Measure the judge against people answering blind</td><td data-l="Because">A judge is a measuring instrument and needs checking like one.</td><td class="num" data-l="Fixes">6</td></tr>
 </tbody></table></div>
 
 <h2 id="pitfalls"><span class="n">04</span>Pitfalls</h2>
 <h3 id="half">The half move</h3>
-<p>Adopting the format of stage 2 is not the same as getting there. Yes/no questions instead of scores and a pass/fail verdict are the visible part. If the tools are still simulated and the judges still read everything, you have the blind spots of stage 1 with the look of stage 2. The test is four questions, and all four must be yes:</p>
-<div class="findings"><p>The test for stage 2</p><ul>
-<li><b>Written before:</b> is the expected result written in the case before the run?</li>
-<li><b>Real state:</b> is it checked against real state or real artefacts, not a simulation?</li>
-<li><b>Minimal evidence:</b> does each judged question see only the evidence it needs?</li>
-<li><b>Measured judge:</b> has the judge been measured against people?</li>
-</ul></div>
+<p>Adopting the format of stage 2 is not the same as getting there. Yes/no questions instead of scores and a pass/fail verdict are the visible part. If the tools are still simulated and the judges still read everything, you have the blind spots of stage 1 with the look of stage 2. The test is the four questions below the first row, and all four must be yes.</p>
+<div class="gt-wrap"><table class="gt tri">
+<thead><tr><th>The question</th><th>Stage 1</th><th>Half move</th><th>Stage 2</th></tr></thead>
+<tbody>
+<tr class="look"><td>Yes/no rows and a pass/fail verdict? <span>The look, not the test</span></td><td aria-label="no" data-l="Stage 1">✗</td><td aria-label="yes" data-l="Half move">✓</td><td aria-label="yes" data-l="Stage 2">✓</td></tr>
+<tr><td>Written before: is the expected result in the case before the run?</td><td aria-label="no" data-l="Stage 1">✗</td><td aria-label="yes" data-l="Half move">✓</td><td aria-label="yes" data-l="Stage 2">✓</td></tr>
+<tr><td>Real state: is it checked against real state or artefacts, not a simulation?</td><td aria-label="no" data-l="Stage 1">✗</td><td aria-label="no" data-l="Half move">✗</td><td aria-label="yes" data-l="Stage 2">✓</td></tr>
+<tr><td>Minimal evidence: does each judged question see only what it needs?</td><td aria-label="no" data-l="Stage 1">✗</td><td aria-label="no" data-l="Half move">✗</td><td aria-label="yes" data-l="Stage 2">✓</td></tr>
+<tr><td>Measured judge: has the judge been measured against people?</td><td aria-label="no" data-l="Stage 1">✗</td><td aria-label="no" data-l="Half move">✗</td><td aria-label="yes" data-l="Stage 2">✓</td></tr>
+</tbody></table></div>
 
 <h3 id="rows">Most bad rows are bad in one of eight ways</h3>
-<div class="gt-wrap"><table class="gt">
+<div class="gt-wrap"><table class="gt faults">
 <thead><tr><th>The fault</th><th>Example</th><th>The fix</th></tr></thead>
 <tbody>
-<tr><td>Two facts in one row. If one is missing, the honest answer is neither yes nor no. These rows flip most between reruns.</td><td>“Does the reply cover the usage report and the payments escalation?”</td><td>Split at every “and”.</td></tr>
-<tr><td>Vague words. There is no boundary, so every reader draws their own.</td><td>“Does it handle the upgrade appropriately?”</td><td>Name the fact: “Does the reply recommend upgrading the plan now?”</td></tr>
-<tr><td>Conditional rows. Leaving the fact out passes.</td><td>“If the summary mentions the credit, is it $50?”</td><td>Ask for the fact: “Does it record a $50 credit?”</td></tr>
-<tr><td>Rows that need the whole run. A broad question in disguise.</td><td>“Did it use the notes correctly?”</td><td>Break it down. One row per fact, each with the reply and one note.</td></tr>
-<tr><td>Exact wording. A correct paraphrase fails.</td><td>“Does it say ‘re-run the usage report in 3 months’?”</td><td>Name the fact and what counts: 12 weeks counts.</td></tr>
-<tr><td>Facts the system could not know. Guessing is rewarded and honesty punished.</td><td>“Does it give the date of the next call?” when the data holds none</td><td>A row exists only if the starting state establishes the fact.</td></tr>
-<tr><td>Must-not rows with no temptation. They pass trivially and prove nothing.</td><td>“Does it recommend a US region?” when nothing invites one</td><td>Plant a trap: a contract that forbids US regions, beside a need for a region.</td></tr>
-<tr><td>A judge where code would do. You pay for noise you did not need.</td><td>“Was exactly one chat created?”</td><td>Give it to code.</td></tr>
+<tr><td><b>Two facts in one row.</b> If one is missing, the honest answer is neither yes nor no. These rows flip most between reruns.</td><td data-l="Example">“Does the reply cover the usage report and the payments escalation?”</td><td data-l="The fix">Split at every “and”.</td></tr>
+<tr><td><b>Vague words.</b> There is no boundary, so every reader draws their own.</td><td data-l="Example">“Does it handle the upgrade appropriately?”</td><td data-l="The fix">Name the fact: “Does the reply recommend upgrading the plan now?”</td></tr>
+<tr><td><b>Conditional rows.</b> Leaving the fact out passes.</td><td data-l="Example">“If the summary mentions the credit, is it $50?”</td><td data-l="The fix">Ask for the fact: “Does it record a $50 credit?”</td></tr>
+<tr><td><b>Rows that need the whole run.</b> A broad question in disguise.</td><td data-l="Example">“Did it use the notes correctly?”</td><td data-l="The fix">Break it down. One row per fact, each with the reply and one note.</td></tr>
+<tr><td><b>Exact wording.</b> A correct paraphrase fails.</td><td data-l="Example">“Does it say ‘re-run the usage report in 3 months’?”</td><td data-l="The fix">Name the fact and what counts: 12 weeks counts.</td></tr>
+<tr><td><b>Facts the system could not know.</b> Guessing is rewarded and honesty punished.</td><td data-l="Example">“Does it give the date of the next call?” when the data holds none</td><td data-l="The fix">A row exists only if the starting state establishes the fact.</td></tr>
+<tr><td><b>Must-not rows with no temptation.</b> They pass trivially and prove nothing.</td><td data-l="Example">“Does it recommend a US region?” when nothing invites one</td><td data-l="The fix">Plant a trap: a contract that forbids US regions, beside a need for a region.</td></tr>
+<tr><td><b>A judge where code would do.</b> You pay for noise you did not need.</td><td data-l="Example">“Was exactly one chat created?”</td><td data-l="The fix">Give it to code.</td></tr>
 </tbody></table></div>
-<p>Two habits repay themselves. Say what failure looks like: a row that states both the passing and the failing condition, and names absence explicitly, is applied more consistently, because a judge that is not told to look for something missing tends to look only for something wrong. And fix the row before you tune the judge: unstable verdicts concentrate in a few faulty rows, and rows that hold two facts are the largest source of flips.</p>
+<p>Two habits help. Say what failure looks like: a row that states both the passing and the failing condition, and names absence explicitly, is applied more consistently, because a judge that is not told to look for something missing tends to look only for something wrong. And fix the row before you tune the judge: unstable verdicts concentrate in a few faulty rows, and rows that hold two facts are the largest source of flips.</p>
 
 <h3 id="process">Seven ways to get a number that means nothing</h3>
 <div class="gt-wrap"><table class="gt">
 <thead><tr><th>The shortcut</th><th>What goes wrong</th><th>Instead</th></tr></thead>
 <tbody>
-<tr><td>Only testing what must not happen</td><td>A system that refuses everything passes.</td><td>Include cases where helping is right. Use wanted and unwanted rows together.</td></tr>
-<tr><td>Showing reviewers the judge’s verdict</td><td>They agree with it.</td><td>Blind review: the same question, the same evidence, no verdict.</td></tr>
-<tr><td>Counting errors as passes</td><td>A grader that crashed looks like a perfect system.</td><td>An error is never a pass. A run with nothing checked is never a pass.</td></tr>
-<tr><td>One run per case</td><td>Models vary between attempts, so one pass can be luck.</td><td>Run each case several times.</td></tr>
-<tr><td>Tuning on the cases you report</td><td>The number climbs and the system does not.</td><td>Keep some cases held out, and confirm on cases you have not looked at.</td></tr>
-<tr><td>Softening a case until the system passes</td><td>The evaluation stops measuring anything.</td><td>Change a case only when the case is wrong, and record why.</td></tr>
-<tr><td>Starting with the whole benchmark</td><td>It is too broad to specify, and its pass rate means nothing in particular.</td><td>One capability, one sentence, one set of cases. Combine sets later.</td></tr>
+<tr><td>Only testing what must not happen</td><td data-l="What goes wrong">A system that refuses everything passes.</td><td data-l="Instead">Include cases where helping is right. Use wanted and unwanted rows together.</td></tr>
+<tr><td>Showing reviewers the judge’s verdict</td><td data-l="What goes wrong">They agree with it.</td><td data-l="Instead">Blind review: the same question, the same evidence, no verdict.</td></tr>
+<tr><td>Counting errors as passes</td><td data-l="What goes wrong">A grader that crashed looks like a perfect system.</td><td data-l="Instead">An error is never a pass. A run with nothing checked is never a pass.</td></tr>
+<tr><td>One run per case</td><td data-l="What goes wrong">Models vary between attempts, so one pass can be luck.</td><td data-l="Instead">Run each case several times.</td></tr>
+<tr><td>Tuning on the cases you report</td><td data-l="What goes wrong">The number climbs and the system does not.</td><td data-l="Instead">Keep some cases held out, and confirm on cases you have not looked at.</td></tr>
+<tr><td>Softening a case until the system passes</td><td data-l="What goes wrong">The evaluation stops measuring anything.</td><td data-l="Instead">Change a case only when the case is wrong, and record why.</td></tr>
+<tr><td>Starting with the whole benchmark</td><td data-l="What goes wrong">It is too broad to specify, and its pass rate means nothing in particular.</td><td data-l="Instead">One capability, one sentence, one set of cases. Combine sets later.</td></tr>
 </tbody></table></div>
 <p>When a run fails, decide first which was at fault, the system or the case. Fix the system to pass the case. Fix the case only when the case was wrong.</p>
 
 <h2 id="reading"><span class="n">05</span>Reading the result</h2>
-<p>One attempt passing is not the same as every attempt passing. Run each case several times and report both numbers. <b>pass@1</b> is how often a single attempt passes. <b>pass^k</b> is how often k attempts all pass: for a case with n runs of which c passed, the chance that k runs drawn from the n all passed. The gap between the first and the last is the unreliability (<a class="figref" href="#figure-4">Figure 4</a>).</p>
+<p>One attempt passing is not the same as every attempt passing. Run each case several times and report both numbers. <b>pass@1</b> is how often a single attempt passes. <b>pass^k</b><a class="sn" href="#ref-3" style="--n:'3'"></a><span class="note" style="--n:'3'" title="τ-bench"><a href="#ref-3">Yao et al., 2024</a></span> is how often k attempts all pass: for a case with n runs of which c passed, the chance that k runs drawn from the n all passed. The gap between the first and the last is the unreliability (<a class="figref" href="#figure-4">Figure 4</a>).</p>
 
 <figure id="figure-4" class="wide">
   <div class="scroll"><svg viewBox="0 0 1000 330" width="100%" role="img" aria-label="Ten cases each run five times. pass at 1 is 82 percent, pass to the 3 is 69 percent, pass to the 5 is 60 percent.">
@@ -1262,7 +1285,7 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
 </figure>
 
 <p>Two more things belong beside the number. Give an interval, because with twenty cases and a pass rate near half the interval is roughly twenty points either side, and a difference inside it is not a difference. And break failures down by check, so the result says <em>what</em> failed, not only that something did.</p>
-<p>The new number will also be lower than the stage 1 score it replaces, and the two are not comparable. A lenient score of 0.83 judged afterwards and a strict pass rate where every check must pass are different rulers. The system did not get worse; the measurement got sharper. Say so before you publish it.</p>
+<p>The new number will also be lower than the stage 1 score it replaces, and the two are not comparable. A lenient score of 0.83 judged afterwards and a strict pass rate where every check must pass are different rulers. The system has not got worse; the test is stricter. Say so when you publish the first number.</p>
 
 <h2 id="reliability"><span class="n">06</span>Three kinds of judge reliability, and what may train a model</h2>
 <p>There is no single “judge reliability” number. Three different things are measured, and each answers a different question. Name which one you mean (<a class="figref" href="#figure-5">Figure 5</a>).</p>
@@ -1272,14 +1295,21 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
   <div class="gt-wrap"><table class="gt">
   <thead><tr><th>Against</th><th>The question</th><th>How it is measured</th></tr></thead>
   <tbody>
-  <tr><td>Itself</td><td>Does the judge give the same verdict on the same evidence if asked again?</td><td>Judge stored evidence several times in separate calls and report how often verdicts flip. Temperature zero does not make a judge repeatable.</td></tr>
-  <tr><td>Known answers</td><td>Does it agree with a source that is known to be right?</td><td>Compare with anchors: items whose correct answer comes from a checker or a person other than the judge. Report agreement with an interval, and the false passes and false fails.</td></tr>
-  <tr><td>People</td><td>Does it agree with people as well as people agree with each other?</td><td>Blind labels on a sample of rows. Report chance-corrected agreement (kappa) beside plain agreement, and read every disagreement.</td></tr>
+  <tr><td>Itself</td><td data-l="The question">Does the judge give the same verdict on the same evidence if asked again?</td><td data-l="How it is measured">Judge stored evidence several times in separate calls and report how often verdicts flip. Temperature zero does not make a judge repeatable<a class="sn" href="#ref-1" style="--n:'1'"></a><span class="note" style="--n:'1'" title="Nondeterminism in LLM inference"><a href="#ref-1">He, 2025</a></span>.</td></tr>
+  <tr><td>Known answers</td><td data-l="The question">Does it agree with a source that is known to be right?</td><td data-l="How it is measured">Compare with anchors: items whose correct answer comes from a checker or a person other than the judge. Report agreement with an interval, and the false passes and false fails.</td></tr>
+  <tr><td>People</td><td data-l="The question">Does it agree with people as well as people agree with each other?</td><td data-l="How it is measured">Blind labels on a sample of rows. Report chance-corrected agreement (kappa) beside plain agreement, and read every disagreement.</td></tr>
   </tbody></table></div>
   <figcaption><span class="fl">Figure 5</span><b>Each measure answers a different question.</b> A judge can be repeatable and still wrong, or right on known cases and unrepeatable on new ones.</figcaption>
 </figure>
 
-<p>This matters most when a score is about to become a <b>training reward</b>. A model trained on a noisy judge learns the judge’s quirks. A stage 1 score is for discovery and monitoring and is never a reward. A score may train a model, or back the claim that a trained model is better, only when all of these hold: it is stage 2, it is repeatable on rerun to a bar fixed before training, it has been checked against people, and its rewards leave room to learn (not nearly all passing, not nearly all failing). Until then, label the number “judge not yet validated against people” and do not train on it.</p>
+<p>This matters most when a score is about to become a <b>training reward</b>. A model trained on a noisy judge learns the judge’s quirks. A stage 1 score is for discovery and monitoring and is never a reward.</p>
+<div class="findings"><p>Before a score trains a model, or backs the claim that a trained model is better</p><ul>
+<li><b>It is stage 2:</b> all four questions in section 04 are yes.</li>
+<li><b>It repeats:</b> rerun, it stays within a bar fixed before training started.</li>
+<li><b>People agree with it:</b> it has been checked against blind labels.</li>
+<li><b>It leaves room to learn:</b> not nearly all passing, not nearly all failing.</li>
+</ul></div>
+<p>Until all four hold, label the number “judge not yet validated against people” and do not train on it.</p>
 
 <h2 id="todo"><span class="n">07</span>What to do</h2>
 <h3 id="where">Find where you are</h3>
@@ -1292,22 +1322,30 @@ ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
   <li>When a run fails, does the result name the specific thing that went wrong?</li>
   <li>Do you know how often your judge disagrees with experts, and with itself on a rerun?</li>
 </ol>
-<div class="call"><p><b>Stage 1 is still the right tool in two places.</b> For <em>discovery</em>, when a new product has no definition of correct yet: read what the general judges flag, and let those failures become your stage 2 cases. For <em>live monitoring</em>, where production traffic has no case specification: the expert labels from stage 2 are what you need to check a general judge.</p></div>
+<p>Stage 1 still has its uses. Each stage fits different jobs:</p>
+<div class="gt-wrap"><table class="gt jobs">
+<thead><tr><th>The job</th><th>Stage 1</th><th>Stage 2</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Finding how a new system fails</td><td data-l="Stage 1">Yes</td><td data-l="Stage 2">Not yet</td><td data-l="Why">No definition of correct exists yet. The failures the judges flag become your first cases.</td></tr>
+<tr><td>Watching live traffic</td><td data-l="Stage 1">Yes</td><td data-l="Stage 2">No</td><td data-l="Why">Live traffic has no case specification. Check the general judge with the expert labels from stage 2.</td></tr>
+<tr><td>Approving a release, catching a regression</td><td data-l="Stage 1">No</td><td data-l="Stage 2">Yes</td><td data-l="Why">A score can move without a reason. A failed check names one.</td></tr>
+<tr><td>A training reward</td><td data-l="Stage 1">Never</td><td data-l="Stage 2">Once measured</td><td data-l="Why">Only when the four conditions in section 06 hold.</td></tr>
+</tbody></table></div>
 <p>Move to stage 2 when you cannot explain a change in the score, when reviewers keep disagreeing with the judges, when a regression ships that the evaluation passed, or when the evaluation is about to decide releases.</p>
 
 <h3 id="steps">Nine steps to a first trustworthy set</h3>
 <div class="gt-wrap"><table class="gt">
 <thead><tr><th>Step</th><th>Do this</th><th>You end up with</th></tr></thead>
 <tbody>
-<tr><td>1 · Scope</td><td>Pick one capability or one safety behaviour and write it as one sentence.</td><td>A one-sentence scope</td></tr>
-<tr><td>2 · Environment</td><td>Stand up the real system in a sandbox, from seeded synthetic data, with the clock fixed.</td><td>A sandbox you can reset</td></tr>
-<tr><td>3 · Cases</td><td>Write ten or so cases: a starting state with traps, a request, what must be true afterwards, what may change, what it may and must do.</td><td>About ten case files</td></tr>
-<tr><td>4 · Rows</td><td>Write wanted and unwanted rows, one fact each, each with its evidence.</td><td>Rows, each with its evidence</td></tr>
-<tr><td>5 · Checks</td><td>Give code everything code can decide.</td><td>Code checks</td></tr>
-<tr><td>6 · Review</td><td>Have an expert review every case. Test every row with one output that should pass and one that should fail.</td><td>Reviewed cases, proven rows</td></tr>
-<tr><td>7 · Dry run</td><td>Run five times and read every failure. Was the system at fault or the case?</td><td>A triaged list of failures</td></tr>
-<tr><td>8 · Judge</td><td>Have experts answer a sample of rows blind. Compare their answers with the judge’s.</td><td>Judge-to-expert agreement</td></tr>
-<tr><td>9 · Report</td><td>Report both pass rates, with the versions that produced them.</td><td>Two pass rates, with versions</td></tr>
+<tr><td>1 · Scope</td><td data-l="Do this">Pick one capability or one safety behaviour and write it as one sentence.</td><td data-l="You end up with">A one-sentence scope</td></tr>
+<tr><td>2 · Environment</td><td data-l="Do this">Stand up the real system in a sandbox, from seeded synthetic data, with the clock fixed.</td><td data-l="You end up with">A sandbox you can reset</td></tr>
+<tr><td>3 · Cases</td><td data-l="Do this">Write ten or so cases: a starting state with traps, a request, what must be true afterwards, what may change, what it may and must do.</td><td data-l="You end up with">About ten case files</td></tr>
+<tr><td>4 · Rows</td><td data-l="Do this">Write wanted and unwanted rows, one fact each, each with its evidence.</td><td data-l="You end up with">Rows, each with its evidence</td></tr>
+<tr><td>5 · Checks</td><td data-l="Do this">Give code everything code can decide.</td><td data-l="You end up with">Code checks</td></tr>
+<tr><td>6 · Review</td><td data-l="Do this">Have an expert review every case. Test every row with one output that should pass and one that should fail.</td><td data-l="You end up with">Reviewed cases, proven rows</td></tr>
+<tr><td>7 · Dry run</td><td data-l="Do this">Run five times and read every failure. Was the system at fault or the case?</td><td data-l="You end up with">A triaged list of failures</td></tr>
+<tr><td>8 · Judge</td><td data-l="Do this">Have experts answer a sample of rows blind. Compare their answers with the judge’s.</td><td data-l="You end up with">Judge-to-expert agreement</td></tr>
+<tr><td>9 · Report</td><td data-l="Do this">Report both pass rates, with the versions that produced them.</td><td data-l="You end up with">Two pass rates, with versions</td></tr>
 </tbody></table></div>
 <p>Then grow the set, one capability at a time, and combine sets later. Keep about a quarter of the cases held out and look at them only to report. Add a case whenever real use shows a failure the set did not catch, and when nearly every case passes every attempt, write harder ones.</p>
 
@@ -1347,6 +1385,13 @@ https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/</code>
   url     = {https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/}
 }</code></pre>
 </div>
+<h3 id="sec-references">References</h3>
+<ol class="refs">
+<li id="ref-1">He, H., Thinking Machines Lab. <a href="https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/">Defeating Nondeterminism in LLM Inference</a>. Thinking Machines Lab: Connectionism, 2025.</li>
+<li id="ref-2">Liu, N. F., Lin, K., Hewitt, J., Paranjape, A., Bevilacqua, M., Petroni, F., Liang, P. <a href="https://arxiv.org/abs/2307.03172">Lost in the Middle: How Language Models Use Long Contexts</a>. Transactions of the Association for Computational Linguistics, 2023.</li>
+<li id="ref-3">Yao, S., Shinn, N., Razavi, P., Narasimhan, K. <a href="https://arxiv.org/abs/2406.12045">τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains</a>. arXiv:2406.12045, 2024.</li>
+<li id="ref-4">Zheng, L., Chiang, W.-L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., et al. <a href="https://arxiv.org/abs/2306.05685">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a>. NeurIPS Datasets and Benchmarks Track, 2023.</li>
+</ol>
 <p class="totop"><a href="#toc">↑ Back to contents</a></p>
 
 </article></main>
