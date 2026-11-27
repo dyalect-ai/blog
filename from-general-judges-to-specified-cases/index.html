@@ -1,0 +1,1403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>Decide what good means before the run, not while grading it · Dyalect</title>
+<meta name="description" content="Most AI evaluations ask a judge to read a whole run and score it. A mature one decides what good means before the run, checks what the system left behind, and measures the judge against people. What the two stages are, one worked case, and six questions to tell which you are in.">
+<meta property="og:url" content="https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Dyalect">
+<meta property="og:title" content="Decide what good means before the run, not while grading it">
+<meta property="og:description" content="Most AI evaluations ask a judge to read a whole run and score it. A mature one decides what good means before the run, checks what the system left behind, and measures the judge against people. What the two stages are, one worked case, and six questions to tell which you are in.">
+<meta property="og:image" content="https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23000'/%3E%3Crect x='6' y='6' width='20' height='20' rx='2' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Crect x='15.5' y='9.5' width='7' height='7' fill='%23F7611D'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../assets/avatar.png">
+<style>
+  @font-face { font-family: 'Geist Variable'; font-weight: 100 900; src: url(fonts/geist-latin-wght-normal-BgDaEnEv.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Geist Variable'; font-weight: 100 900; src: url(fonts/geist-latin-ext-wght-normal-DC-KSUi6.woff2) format('woff2'); unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  
+  @font-face { font-family: 'Geist Mono Variable'; font-weight: 100 900; src: url(fonts/geist-mono-latin-wght-normal-XN7g48iV.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Geist Mono Variable'; font-weight: 100 900; src: url(fonts/geist-mono-latin-ext-wght-normal-Bwz-egvJ.woff2) format('woff2'); unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  
+
+  :root {
+    --purple: #F7611D; --purple-deep: #3B3A37; --ink: #000000; --paper: #F4F3EF; --paper-2: #E8E6E0;
+    --lime: #F7611D; --lime-ink: #1C1C1C; --white: #FFFFFF; --muted: rgba(255,255,255,.74);
+    --muted-ink: #5B5A55; --line: rgba(255,255,255,.18); --line-ink: rgba(0,0,0,.10); --rose: #C4281C;
+    --sans: 'Geist Variable', 'Noto Sans CJK SC', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'Geist Mono Variable', 'Noto Sans Mono CJK SC', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; color: var(--ink); background: var(--paper); font: 17.5px/1.72 var(--sans);
+         -webkit-font-smoothing: antialiased; counter-reset: sn; }
+  a { color: var(--purple); text-decoration: none; border-bottom: 1px solid rgba(0,0,0,.3); }
+
+  /* hero, as on the report's cover slide */
+  .hero { position: relative; overflow: hidden; color: var(--white);
+          background: radial-gradient(1100px 700px at 85% 0%, #282828 0%, transparent 60%),
+                      linear-gradient(160deg, var(--purple) 0%, var(--purple-deep) 62%, #000000 100%); }
+  .hero::before { content: ''; position: absolute; inset: 0; background: none;
+                  opacity: .18; mix-blend-mode: overlay; pointer-events: none; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; }
+  .hero-in { position: relative; max-width: 1120px; margin: 0 auto; padding: 30px 32px 64px; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 84px; }
+  .brand { display: flex; align-items: center; gap: 12px; color: var(--white); border: 0; }
+  .mark { width: 30px; height: 30px; }
+  .word { font-size: 13px; font-weight: 600; letter-spacing: .2em; }
+  .meta { font: 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; opacity: .62; }
+  .print-brand { display: none; }
+  .kicker { font: 13px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lime);
+            display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 22px; }
+  .kicker .n { padding: 3px 10px; border-radius: 2px; background: var(--lime); color: var(--ink); font-weight: 600; }
+  .hero h1 { font-weight: 500; font-size: 68px; line-height: 1.02; letter-spacing: -.04em; margin: 0; max-width: 1056px; }
+  .hero h1 .hl { color: var(--lime); }
+  .hero .lead { font-size: 21px; line-height: 1.6; color: var(--muted); max-width: 760px; margin: 26px 0 0;
+               text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  .stats { display: flex; gap: 16px; margin-top: 44px; flex-wrap: wrap; }
+  .stat { background: rgba(255,255,255,.09); border: 1px solid var(--line); border-radius: 4px; padding: 18px 22px; min-width: 220px; flex: 1; max-width: 300px; }
+  .stat b { display: block; font-size: 40px; font-weight: 500; letter-spacing: -.04em; line-height: 1.1; color: var(--lime); }
+  .stat span { font-size: 14.5px; line-height: 1.45; color: var(--muted); display: block; margin-top: 6px; }
+.stat .k { font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--lime); opacity: .78; margin: 0 0 12px; }
+  .byline { margin-top: 40px; font: 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .byline b { color: var(--white); font-weight: 600; }
+  .byline .pdf { display: inline-block; margin-left: 12px; padding: 5px 11px 4px; border-radius: 2px;
+                 border: 1px solid rgba(255,255,255,.32); color: var(--white); text-decoration: none;
+                 letter-spacing: .08em; transition: background .15s, border-color .15s; }
+  .byline .pdf:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.6); }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 56px 32px 80px; }
+  .col { max-width: 680px; position: relative; }
+  h2 { font-weight: 500; font-size: 34px; line-height: 1.15; letter-spacing: -.03em; margin: 72px 0 18px; }
+  h2 .n { display: block; width: max-content; font: 600 13px/1 var(--mono); letter-spacing: .14em; color: var(--lime);
+          background: var(--ink); padding: 6px 11px; border-radius: 2px; margin-bottom: 14px; }
+  h3 { font-weight: 600; font-size: 21px; letter-spacing: -.015em; margin: 40px 0 8px; }
+  p { margin: 0 0 18px; }
+  main p, main li, figcaption { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  main .note, main .refs li, main .cite p { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+  em { font-style: italic; }
+  code { font: 500 .84em/1.5 var(--mono); color: #000000; background: rgba(0,0,0,.07);
+         border: 1px solid rgba(0,0,0,.14); border-radius: 4px; padding: .1em .38em .08em; white-space: nowrap; }
+  code.wrap { white-space: normal; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: 1.6; }
+  code .tex { color: #A09E97; }
+  div.pattern { margin: 0 0 24px; padding: 13px 18px; background: #fff; border: 1px solid rgba(0,0,0,.16);
+                border-left: 3px solid var(--purple); border-radius: 4px; }
+  div.pattern code { font-size: 14px; color: var(--ink); background: none; border: 0; padding: 0; white-space: pre-wrap; }
+  div.pattern .pat-note { display: block; margin-top: 9px; font: 600 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-ink); }
+  .findings code { color: var(--lime); background: rgba(255,255,255,.1); }
+  figcaption code { font-size: .9em; }
+  sup { font-size: .68em; line-height: 0; vertical-align: .6em; }
+  .math { white-space: nowrap; font-feature-settings: "tnum"; }
+  pre { font: 13.5px/1.65 var(--mono); background: #fff; color: var(--ink); padding: 18px 22px 18px 20px;
+        border: 1px solid rgba(0,0,0,.16); border-left: 3px solid var(--purple); border-radius: 4px;
+        white-space: pre-wrap; margin: 0 0 22px; box-shadow: none; }
+  pre code { background: none; padding: 0; font: inherit; color: inherit; white-space: inherit; }
+  pre .ln { display: block; padding-left: calc(var(--i) * 1ch + 4ch); text-indent: -4ch; }
+  pre .c { color: #A09E97; font-style: italic; }
+  pre .k { color: var(--purple); font-weight: 600; }
+  pre .f { color: var(--purple-deep); font-weight: 600; }
+  ul { padding-left: 22px; margin: 0 0 20px; }
+  li { margin-bottom: 8px; }
+
+  .findings { background: var(--ink); color: var(--white); border-radius: 4px; padding: 24px 28px 10px; margin: 8px 0 30px;
+              box-shadow: none; }
+  .findings p:first-child { font: 600 13px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lime); margin-bottom: 12px; }
+  .findings ul { padding-left: 20px; }
+  .findings li { font-size: 16.5px; color: var(--muted); }
+  .findings li::marker { color: var(--lime); }
+  .findings b { color: var(--white); font-weight: 600; }
+
+  /* sidenotes */
+  .sn { counter-increment: sn; text-decoration: none; border-bottom: 0; color: var(--purple); }
+  .sn::after { content: var(--n, counter(sn)); font: 600 11px/0 var(--mono); vertical-align: super; color: var(--purple); margin-left: 1px; }
+  .note { float: right; clear: right; width: 290px; margin-right: -340px; margin-top: 4px; margin-bottom: 14px;
+          font-size: 13.5px; line-height: 1.5; color: var(--muted-ink); }
+  .note::before { content: var(--n, counter(sn)) "  "; font: 600 12px var(--mono); color: var(--purple); }
+  .note a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(0,0,0,.32); }
+  .note a:hover { color: var(--purple); border-bottom-color: var(--purple); }
+  .refs li[id] { scroll-margin-top: 24px; }
+  .refs li:target { background: rgba(247,97,29,.22); border-radius: 4px; }
+
+  figure { margin: 30px 0 36px; background: #fff; border: 1px solid rgba(0,0,0,.10); border-radius: 4px;
+           box-shadow: none; padding: 26px 26px 20px; }
+  figure.wide { width: min(1020px, calc(100vw - 64px)); }  /* column 680 + gap 50 + sidenotes 290 */
+  figcaption { font-size: 14px; line-height: 1.55; color: var(--muted-ink); margin-top: 16px; max-width: 760px; }
+  figcaption .fl { display: block; font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--purple); margin-bottom: 4px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  /* weight explorer */
+  #wx { font-family: var(--sans); }
+  .wx-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .wx-tab { font: 500 14px var(--sans); color: var(--ink); background: var(--paper); border: 1px solid rgba(0,0,0,.16);
+            border-radius: 2px; padding: 7px 14px 7px 8px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+  .wx-tab span { font: 600 11.5px var(--mono); background: #fff; color: var(--purple); border-radius: 2px; padding: 3px 8px; }
+  .wx-tab:hover { border-color: var(--purple); }
+  .wx-tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .wx-tab.on span { background: var(--lime); color: var(--ink); }
+  .wx-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 12px; }
+  .wx-title { font-weight: 600; font-size: 17px; }
+  .wx-note { font-size: 14px; color: var(--muted-ink); line-height: 1.5; max-width: 640px; }
+  .wx-jumps { display: flex; background: var(--paper); border-radius: 2px; padding: 3px; flex: none; }
+  .wx-jump { font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted-ink);
+             background: none; border: 0; border-radius: 2px; padding: 6px 12px; cursor: pointer; }
+  .wx-jump:hover { color: var(--ink); background: #fff; }
+  .wx-frame { display: flex; justify-content: center; background: var(--paper); border-radius: 4px; padding: 14px; }
+  .wx-stage { position: relative; max-width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+  .wx-stage canvas { position: absolute; left: 0; top: 0; display: block; border-radius: 4px; }
+  .wx-lab { position: absolute; top: 8px; font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+            padding: 4px 9px; border-radius: 2px; pointer-events: none; white-space: nowrap; transition: opacity .15s; }
+  .wx-lab.l { left: 8px; background: var(--ink); color: #fff; }
+  .wx-lab.r { right: 8px; background: var(--lime); color: var(--ink); }
+  .wx-handle { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1.5px; background: var(--ink); cursor: ew-resize; touch-action: none; }
+  .wx-handle span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px;
+                    border-radius: 50%; background: var(--ink); color: var(--lime); display: grid; place-items: center;
+                    font-size: 17px; box-shadow: none; }
+  .wx-handle::before { content: ""; position: absolute; inset: 0 -14px; }
+  .wx-tip { position: absolute; z-index: 3; max-width: 380px; background: var(--ink); color: #FFFFFF; font-size: 12.5px; line-height: 1.45;
+            padding: 9px 12px; border-radius: 4px; pointer-events: none; box-shadow: none; }
+  .wx-tip b { color: var(--lime); font: 600 12px var(--mono); }
+  .wx-tip span { color: rgba(255,255,255,.7); }
+  .wx-stats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 12px; font: 12.5px var(--mono); color: var(--muted-ink); }
+  .wx-stats .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; }
+  .wx-stats .sw.b { background: var(--ink); } .wx-stats .sw.a { background: var(--lime); }
+  @media (max-width: 760px) {
+    .wx-head { flex-direction: column; align-items: flex-start; } .wx-frame { padding: 8px; }
+    .wx-tabs { gap: 6px; } .wx-tab { font-size: 13px; padding: 5px 11px 5px 6px; }
+  }
+
+  /* figure 1, as on the report's problem slide */
+  figure.problem { color: var(--white); border: 0; position: relative; overflow: hidden;
+                   background: radial-gradient(700px 400px at 90% 0%, #282828 0%, transparent 60%),
+                               linear-gradient(160deg, var(--purple) 0%, var(--purple-deep) 70%, #000000 100%); }
+  figure.problem figcaption { color: var(--muted); }
+  figure.problem figcaption .fl { color: var(--lime); }
+  figure.problem figcaption b { color: var(--white); }
+  .prompt { font: 14px var(--mono); color: var(--lime); margin: 2px 0 16px; }
+  .prompt span { color: var(--muted); }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .rc { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 18px 20px; box-shadow: none; }
+  .rc-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .who { font: 11.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-ink); }
+  .verdict { font: 600 12px var(--mono); padding: 4px 10px; border-radius: 2px; white-space: nowrap; }
+  .verdict.bad { background: #FCE6E3; color: var(--rose); }
+  .verdict.good { background: var(--lime); color: var(--ink); }
+  .reply { background: none; color: var(--ink); padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
+           font-size: 12.5px; line-height: 1.6;
+           white-space: pre-wrap; word-break: break-word; }
+  mark.bad { background: #FCE6E3; color: var(--rose); padding: 0 3px; border-radius: 4px; }
+  mark.ok { background: var(--lime); color: var(--ink); padding: 0 3px; border-radius: 4px; }
+
+  .pair { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 16px; align-items: baseline; font: 14px var(--mono);
+          background: var(--ink); color: var(--white); border-radius: 4px; padding: 16px 22px; margin: 0 0 22px; }
+  .pair .lab { color: var(--muted); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .pair .d { color: var(--ink); background: var(--lime); border-radius: 4px; padding: 0 8px; font-weight: 600; }
+  .pair .d.o { background: #FDC3A3; }
+  .pair .x { color: #FDC3A3; font-weight: 700; }
+
+  /* figure 8: the /zh trace */
+  .trace-wrap { display: grid; grid-template-columns: 1fr 250px; gap: 28px; }
+  .tl { font: 12.5px/1.5 var(--mono); margin-bottom: 5px; }
+  .tk { display: inline-block; white-space: pre; padding: 1px 2px; border-radius: 4px; margin: 1px 0; color: var(--muted-ink); }
+  .tk.sp { font-size: 10.5px; color: #7B7973; background: var(--paper); padding: 1px 5px; margin-right: 3px; }
+  .tk.nl { color: #A09E97; padding: 1px 4px; }
+  .tk.on { background: var(--paper-2); color: var(--purple-deep); }
+  .tk.first { background: var(--lime); color: var(--ink); font-weight: 600; }
+  .tk.cmd { outline: 1.5px solid var(--purple); font-weight: 700; color: var(--purple-deep); }
+  .tkey { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted-ink); margin-top: 14px; }
+  .sw { display: inline-block; width: 13px; height: 13px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; }
+  .sw.z { background: #fff; border: 1px solid var(--line-ink); }
+  .sw.on { background: var(--paper-2); border: 1px solid rgba(0,0,0,.3); }
+  .sw.first { background: var(--lime); }
+  .ft { border-left: 1px solid var(--line-ink); padding-left: 22px; }
+  .ft-t { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .ft-h { font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-ink); margin: 2px 0 8px; }
+  .ft-h + .ftr ~ .ft-h { margin-top: 20px; }
+  .ftr { display: grid; grid-template-columns: 74px 1fr 36px; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 5px; }
+  .ftt { font-family: var(--mono); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .ftb { background: var(--paper); border-radius: 4px; height: 10px; overflow: hidden; }
+  .ftb i { display: block; height: 100%; background: var(--purple); border-radius: 4px; }
+  .ftp { font-family: var(--mono); font-size: 12px; color: var(--muted-ink); text-align: right; }
+
+  table.lens { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.4; }
+  table.lens td { padding: 7px 8px; border-top: 1px solid var(--line-ink); vertical-align: middle; }
+  table.lens tr:first-child td { border-top: 0; }
+  table.lens td.lm { width: 190px; color: var(--ink); font-weight: 600; }
+  table.lens td.lk { width: 54px; color: var(--muted-ink); font: 12px var(--mono); }
+  table.lens tr.hl td { background: #F4F3EF; }
+  .chip { display: inline-block; font: 12.5px/1.3 var(--mono); background: var(--paper-2); color: var(--purple-deep);
+          border-radius: 4px; padding: 2px 7px; margin: 2px 4px 2px 0; white-space: nowrap; }
+
+  .refs { font-size: 14px; line-height: 1.55; color: #3B3A37; padding-left: 20px; }
+  .refs li { margin-bottom: 7px; }
+  .cite { font-size: 14.5px; line-height: 1.55; }
+  .cite pre { font-size: 13px; }
+  @media (max-width: 760px) { pre { font-size: 12px; padding: 14px 14px 14px 13px; } }
+  hr { border: 0; border-top: 1px solid var(--line-ink); margin: 64px 0 30px; }
+
+  footer { background: var(--ink); color: var(--muted); }
+  footer div { max-width: 1120px; margin: 0 auto; padding: 26px 32px; display: flex; justify-content: space-between;
+               align-items: center; font: 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+
+  @media (max-width: 1180px) {
+    .sn::after { content: none; }
+    .note { float: none; display: inline; width: auto; margin: 0; font-size: 14px; }
+    .note::before { content: " [" var(--n, counter(sn)) ": "; font: inherit; color: var(--muted-ink); }
+    .note::after { content: "]"; }
+    figure.wide { width: 100%; }
+  }
+  @media (max-width: 760px) {
+    body { font-size: 16.5px; }
+    .hero-in { padding: 24px 20px 48px; }
+    .top { margin-bottom: 52px; }
+    .hero h1 { font-size: 44px; }
+    .hero .lead { font-size: 18px; }
+    .stat { max-width: none; }
+    main { padding: 40px 20px 64px; }
+    figure { padding: 18px 16px 14px; border-radius: 4px; }
+    .duo, .trace-wrap { grid-template-columns: 1fr; }
+    figure.wide .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 0 16px; }
+    figure.wide .scroll svg { min-width: 760px; }
+    figure.wide .scroll::after { content: "scroll →"; display: block; font: 11px var(--mono); color: var(--muted-ink); margin-top: 6px; }
+    .ft { border-left: 0; padding-left: 0; }
+    h2 { font-size: 28px; }
+  }
+
+
+  .tabs { display: flex; gap: 6px; }
+  .tabs a { color: var(--white); font-size: 14.5px; font-weight: 500; padding: 6px 15px; border-radius: 2px;
+            border: 1px solid transparent; opacity: .78; transition: opacity .15s, background .15s; }
+  .tabs a:hover { opacity: 1; background: rgba(255,255,255,.08); }
+  .tabs a.on { opacity: 1; background: rgba(255,255,255,.12); border-color: var(--line); }
+
+
+/* build.py additions: skip link, contents, figure links, footer, print */
+.skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #000000; color: #fff; padding: 10px 16px; border-radius: 0 0 10px 0; }
+.skip:focus { left: 0; }
+:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 4px; }
+nav.toc { margin: 0 0 38px; padding: 22px 26px 18px; border: 1px solid rgba(0,0,0,.16); border-radius: 4px; background: #fff; box-shadow: none; }
+nav.toc .toc-h { margin: 0 0 10px; font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted-ink); }
+nav.toc ol { margin: 0; padding: 0; list-style: none; }
+nav.toc li { margin: 0; }
+nav.toc li.l2 + li.l2 { margin-top: 8px; }
+nav.toc a { display: grid; grid-template-columns: 2.7em 1fr; align-items: baseline; gap: 0 6px; padding: 6px 9px; margin: 0 -9px; border-bottom: 0; border-radius: 4px; color: var(--ink); text-decoration: none; font-size: 15.5px; line-height: 1.35; }
+nav.toc a:hover { background: rgba(0,0,0,.07); }
+nav.toc .n { font: 600 11px/1 var(--mono); letter-spacing: .07em; color: var(--purple); }
+nav.toc li.l3 a { font-size: 14px; color: var(--muted-ink); padding-left: 20px; }
+nav.toc li.l3 a:hover { color: var(--ink); }
+nav.toc + h2 { margin-top: 16px; }
+@media (max-width: 640px) {
+  nav.toc { padding: 18px 16px 14px; border-radius: 4px; }
+  nav.toc a { grid-template-columns: 2.3em 1fr; font-size: 14.5px; padding: 5px 7px; margin: 0 -7px; }
+  nav.toc li.l3 a { font-size: 13.5px; padding-left: 14px; }
+}
+a.figref { color: var(--purple); text-decoration: none; white-space: nowrap; border-bottom: 1px solid rgba(0,0,0,.3); }
+a.figref:hover { background: rgba(0,0,0,.08); }
+figure[id] { scroll-margin-top: 24px; }
+h2[id], h3[id] { scroll-margin-top: 24px; }
+p.totop { margin: 44px 0 0; text-align: center; }
+p.totop a { font: 600 12.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--purple); text-decoration: none; border-bottom: 0; }
+p.totop a:hover { text-decoration: underline; }
+footer nav { display: flex; gap: 18px; }
+footer nav a { color: inherit; text-decoration: none; border-bottom: 0; }
+footer nav a:hover { color: var(--white); }
+
+@media print {
+  /* --- page setup: A4, 170mm text block, same 680px-ish measure as the site --- */
+  @page { size: A4; margin: 15mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+
+  html, body { background: #fff !important; color: #000000; }
+  body { width: 180mm !important; margin: 0 !important; padding: 0 !important;
+         font-family: 'Segoe UI', Arial, sans-serif !important; }
+
+  /* the article's own 17px scale, 1:1 with its 680px design column;
+     only the two typefaces are swapped so PDF text does not garble */
+  :root { --sans: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+          --mono: Consolas, 'Courier New', monospace !important; }
+
+  p { margin-bottom: 3mm !important; }
+  h2 { margin: 9mm 0 3mm !important; }
+  h3 { margin: 6mm 0 2mm !important; }
+  .hero h1 { font-size: 42px !important; }
+  .hero .lead { font-size: 20px !important; }
+  .refs { font-size: 13.5px !important; line-height: 1.45 !important; }
+  .cite pre { font-size: 12px !important; }
+
+  /* --- screen chrome off --- */
+  .hero::before, .hero::after, .orb, nav.top, footer, p.totop, .skip, .byline .pdf { display: none !important; }
+
+  /* --- title block: scaled down from the hero, same hierarchy --- */
+  .print-brand { display: flex !important; align-items: center; gap: 3mm; margin: 0 0 9mm; }
+  .print-brand .mark { width: 8mm; height: 8mm; }
+  .print-brand span { font: 600 12px/1 'Segoe UI', Arial, sans-serif; letter-spacing: .22em; color: #000000; }
+
+  header.hero { background: none !important; color: #000000 !important; overflow: visible !important; padding: 0 !important; }
+  .hero-in { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .kicker { color: #5B5A55 !important; }
+  .kicker .n { background: none !important; color: #000000 !important; padding: 0 !important; }
+  .hero h1 { font-size: 42px; line-height: 1.08; letter-spacing: -.02em; color: #000000 !important; max-width: none; }
+  .hero h1 .hl { color: #000000 !important; }
+  .hero .lead { font-size: 18px; line-height: 1.55; color: #3B3A37 !important; max-width: none;
+                margin: 5mm 0 0; text-align: justify; hyphens: auto; }
+  .byline { font-size: 12px; color: #5B5A55 !important; border-top: 1.2pt solid #000000;
+            margin-top: 7mm; padding-top: 2.5mm; }
+  .byline b { color: #000000 !important; }
+
+  /* --- body keeps the article's own type scale (17px / 34px / 14px) --- */
+  main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .col { max-width: none !important; }
+
+  h2, h3 { break-after: avoid; page-break-after: avoid; break-inside: avoid; page-break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+
+  a { color: #000000 !important; text-decoration: none !important; border-bottom: 0 !important; }
+  a.figref, a.sn { color: #000000 !important; }
+
+  /* sidenotes become bracketed inline notes */
+  .note { float: none !important; display: inline !important; width: auto !important; margin: 0 !important;
+          font-size: 14px !important; color: #3B3A37 !important; }
+  .note::before { content: " [" var(--n) ": " !important; }
+  .note::after { content: "]" !important; }
+
+  /* --- figures --- */
+  figure, figure.wide { width: 100% !important; max-width: 100% !important; margin: 6mm 0 !important;
+                        padding: 6mm 5mm 5mm !important; box-shadow: none !important; overflow: visible !important;
+                        break-inside: avoid; page-break-inside: avoid; }
+  figure .scroll { overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+  figure.wide .scroll svg { min-width: 0 !important; width: 100% !important; height: auto !important; }
+  svg { max-width: 100% !important; height: auto !important; }
+  figcaption { max-width: none !important; }
+
+  /* --- contents --- */
+  nav.toc { border: 0 !important; box-shadow: none !important; background: #fff !important;
+            padding: 0 0 3mm !important; margin: 7mm 0 5mm !important; }
+  nav.toc a { border: 0 !important; }
+  nav.toc ol { columns: 2; column-gap: 10mm; }
+
+  /* --- code, rules, misc --- */
+  pre { box-shadow: none !important; break-inside: avoid; }
+  hr { border: 0; border-top: .6pt solid #D9D7D0; margin: 7mm 0; }
+  .findings { break-inside: avoid; }
+  div.pattern { break-inside: avoid; box-shadow: none !important; }
+
+  /* justified prose with unbreakable code spans goes left-aligned */
+  p.cite, .cite p, .refs li { text-align: left !important; hyphens: manual !important; }
+  p.cite code, .refs code { white-space: normal !important; }
+  .cite pre, .cite pre code { white-space: pre-wrap !important; overflow-wrap: anywhere !important;
+                              word-break: break-word !important; }
+  pre .ln { padding-left: 0 !important; text-indent: 0 !important; display: block; }
+  pre, pre code, code, .ln, .kicker, .byline, nav.toc .n, h2 .n, .note::before { font-family: Consolas, 'Courier New', monospace !important; }
+
+  /* --- references --- */
+  .refs { columns: 2; column-gap: 8mm; }
+  .refs li { break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Weight-writing article additions. All colors are from the Signal design system. */
+.hero .lead { max-width: 850px; }
+.hero .stats { max-width: 1040px; }
+.hero .stat { min-width: 190px; }
+.hero .stat b { font-feature-settings: "tnum"; }
+.hero .stat:first-child { background: rgba(247,97,29,.13); border-color: rgba(247,97,29,.38); }
+.hero .stat:first-child b { color: var(--lime); }
+.fig-title { font-weight: 600; font-size: 17px; margin: 0 0 5px; }
+.fig-sub { color: var(--muted-ink); font-size: 14px; line-height: 1.5; margin: 0 0 18px; }
+.legend { display:flex; flex-wrap:wrap; gap:8px 20px; margin:12px 0 0; font-size:12.5px; color:var(--muted-ink); }
+.legend span { display:inline-flex; align-items:center; gap:7px; }
+.legend i { display:inline-block; width:11px; height:11px; border-radius:3px; }
+.vis-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.rule { background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:16px; min-height:164px; }
+.rule .tag { display:inline-block; font:600 10px var(--mono); letter-spacing:.12em; text-transform:uppercase;
+             border-radius: 2px; padding:5px 9px; color:var(--purple); background:#fff; margin-bottom:11px; }
+.rule b { display:block; font-size:15px; margin-bottom:5px; }
+.rule p { text-align:left; color:var(--muted-ink); font-size:13.5px; line-height:1.5; margin:0; }
+.rule-diagram { height:42px; position:relative; margin:8px 2px 13px; }
+.rule-diagram::before { content:""; position:absolute; left:0; right:0; top:20px; height:7px; border-radius: 4px;
+                        background:linear-gradient(90deg,#E8E6E0,#F7611D); }
+.rule-diagram .own,.rule-diagram .budget { position:absolute; top:8px; width:2px; height:29px; background:var(--ink); }
+.rule-diagram .budget { background:var(--lime-ink); }
+.rule-diagram .own::after,.rule-diagram .budget::after { position:absolute; top:-10px; font:600 9px var(--mono); white-space:nowrap; }
+.rule-diagram .own::after { content:"model"; color:var(--ink); transform:translateX(-50%); }
+.rule-diagram .budget::after { content:"budget"; color:var(--lime-ink); transform:translateX(-50%); }
+.budget-ui { background:var(--paper); border-radius: 4px; padding:18px 20px 20px; margin-top:18px; }
+.budget-top { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:15px; }
+.budget-top label { font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted-ink); }
+.budget-read { font:600 18px var(--mono); color:var(--purple); text-align:right; }
+.budget-ui input[type=range] { width:100%; accent-color:var(--purple); margin:0 0 18px; }
+.metric-bars { display:flex; flex-direction:column; gap:9px; }
+.metric-row { display:grid; grid-template-columns:205px 1fr 58px; gap:10px; align-items:center; transition:order .25s; }
+.metric-name { font-size:13px; color:var(--ink); }
+.metric-track { height:18px; background:#fff; border-radius: 4px; overflow:hidden; }
+.metric-fill { height:100%; width:0; border-radius: 4px; transition:width .25s; }
+.metric-value { font:600 12px var(--mono); text-align:right; }
+.budget-note { margin:15px 0 0; font-size:13.5px; color:var(--muted-ink); text-align:left; }
+.step-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.step-card { background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:14px; min-height:180px; }
+.step-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:600; font-size:14px; }
+.step-num { width:23px; height:23px; border-radius:50%; display:grid; place-items:center; font:600 11px var(--mono);
+            color:var(--ink); background:var(--lime); }
+.step-card svg { width:100%; height:58px; display:block; margin-bottom:7px; }
+.step-card p { margin:0; text-align:left; font-size:12.5px; line-height:1.48; color:var(--muted-ink); }
+.triple { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.teach-card { background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:16px; }
+.teach-card.good { border-color:rgba(0,0,0,.55); }
+.teach-card b { font-size:14px; display:block; min-height:42px; }
+.dots { display:grid; grid-template-columns:repeat(5,22px); gap:9px; margin:12px 0 14px; }
+.dot { width:20px; height:20px; border-radius:50%; border:2px solid #C4281C; }
+.dot.on { border:0; background:var(--purple); }
+.teach-result { font-size:13.5px; font-weight:600; color:var(--rose); }
+.teach-card.good .teach-result { color:var(--purple); }
+.teach-card p { font-size:12.5px; line-height:1.5; text-align:left; color:var(--muted-ink); margin:8px 0 0; }
+.pipe { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; align-items:stretch; margin-bottom:22px; }
+.pipe-item { position:relative; background:var(--paper); border:1px solid rgba(0,0,0,.14); border-radius: 4px;
+             padding:13px 10px; text-align:center; min-height:94px; }
+.pipe-item::after { content:"→"; position:absolute; right:-17px; top:35px; color:var(--muted-ink); }
+.pipe-item:last-child::after { display:none; }
+.pipe-item:last-child { background:var(--ink); color:var(--white); }
+.pipe-item b { font-size:13px; display:block; }
+.pipe-item span { display:block; margin-top:5px; color:var(--muted-ink); font-size:11.5px; line-height:1.35; }
+.pipe-item:last-child span { color:var(--muted); }
+.turns { display:flex; flex-direction:column; gap:10px; }
+.turn { display:grid; grid-template-columns:95px 1fr; gap:13px; align-items:start; border:1px solid rgba(0,0,0,.14);
+        border-radius: 4px; padding:13px 15px; background:#fff; }
+.turn .tn { font:600 11px var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--purple); }
+.turn p { margin:0 0 8px; text-align:left; font-size:13.5px; line-height:1.45; }
+.turn pre { margin:0; padding:10px 12px; border-radius: 4px; box-shadow:none; font-size:11.5px; line-height:1.45; }
+.turn.done { background:var(--ink); color:var(--white); border:0; }
+.turn.done .tn { color:var(--lime); }
+.turn.done p { color:var(--muted); }
+.turn.done b { color:var(--white); }
+.audit-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:20px 0; }
+.audit { background:#fff; border:1px solid rgba(0,0,0,.14); border-radius: 4px; padding:15px; }
+.audit .a-k { font:600 10px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--purple); }
+.audit b { display:block; font-size:24px; margin:4px 0 5px; }
+.audit span { display:block; color:var(--muted-ink); font-size:12.5px; line-height:1.45; }
+.call { border-left:3px solid var(--lime-ink); background:#F4F3EF; border-radius:0;
+        padding:17px 20px; margin:22px 0; }
+.call b { color:var(--ink); }
+.call p { margin:0; text-align:left; font-size:15px; color:#3B3A37; }
+.repo-map { display:grid; grid-template-columns:160px 1fr; font-size:13.5px; border:1px solid rgba(0,0,0,.14);
+            border-radius: 4px; overflow:hidden; background:#fff; margin-bottom:22px; }
+.repo-map div { padding:10px 13px; border-top:1px solid var(--line-ink); }
+.repo-map div:nth-child(-n+2) { border-top:0; }
+.repo-map div:nth-child(odd) { font-family:var(--mono); color:var(--purple); background:var(--paper); }
+.chart-title { font-size:13px; font-weight:600; fill:var(--ink); }
+.chart-muted { font-size:11px; fill:var(--muted-ink); }
+.chart-lab { font-size:11.5px; fill:var(--ink); }
+.chart-tick { font-size:10.5px; fill:var(--muted-ink); }
+.only-print { display:none; }
+@media (max-width:760px) {
+  .vis-grid,.step-grid,.triple,.audit-grid { grid-template-columns:1fr; }
+  .pipe { grid-template-columns:1fr 1fr; }
+  .pipe-item::after { display:none; }
+  .metric-row { grid-template-columns:128px 1fr 48px; }
+  .metric-name { font-size:11.5px; }
+  .turn { grid-template-columns:1fr; }
+  .repo-map { grid-template-columns:110px 1fr; }
+}
+@media print {
+  .budget-ui input { display:none; }
+  .only-print { display:block; }
+}
+</style>
+<link rel="alternate" type="application/atom+xml" title="Dyalect" href="../feed.xml">
+<link rel="canonical" href="https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Decide what good means before the run, not while grading it", "description": "Most AI evaluations ask a judge to read a whole run and score it. A mature one decides what good means before the run, checks what the system left behind, and measures the judge against people. What the two stages are, one worked case, and six questions to tell which you are in.", "datePublished": "2026-11-27", "url": "https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/", "image": "https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/og.jpg", "author": {"@type": "Organization", "name": "Dyalect Research"}, "publisher": {"@type": "Organization", "name": "Dyalect Research"}}</script>
+<style>
+/* build.py additions: skip link, contents, figure links, footer, print (Signal design system) */
+.skip { position: absolute; left: -9999px; top: 0; z-index: 99; background: #000; color: #fff; padding: 10px 16px; }
+.skip:focus { left: 0; }
+:focus-visible { outline: 2px solid #CF4607; outline-offset: 2px; }
+nav.toc { margin: 0 0 56px; padding: 12px 0 16px; border-top: 1px solid #000; border-bottom: 1px solid #C2C0B9; }
+nav.toc .toc-h { margin: 0 0 12px; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5B5A55; }
+nav.toc ol { margin: 0; padding: 0; list-style: none; }
+nav.toc li { margin: 0; }
+nav.toc li.l2 + li.l2 { margin-top: 4px; }
+nav.toc a { display: grid; grid-template-columns: 3em 1fr; align-items: baseline; gap: 0 4px; padding: 5px 8px; margin: 0 -8px;
+            border-bottom: 0; border-radius: 2px; color: #000; text-decoration: none; font-size: 16px; line-height: 1.35;
+            transition: background 120ms cubic-bezier(.2,0,0,1); }
+nav.toc a:hover { background: #F4F3EF; }
+nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: #5B5A55; }
+nav.toc li.l3 a { font-size: 14px; color: #5B5A55; padding-left: 20px; }
+nav.toc li.l3 a:hover { color: #000; }
+nav.toc + h2 { margin-top: 16px; }
+@media (max-width: 640px) {
+  nav.toc a { grid-template-columns: 2.6em 1fr; font-size: 15px; }
+  nav.toc li.l3 a { font-size: 13.5px; padding-left: 14px; }
+}
+a.figref { color: #000; text-decoration: none; white-space: nowrap; border-bottom: 1px solid #A09E97; }
+a.figref:hover { border-bottom-color: #000; }
+figure[id] { scroll-margin-top: 24px; }
+h2[id], h3[id] { scroll-margin-top: 24px; }
+p.totop { margin: 56px 0 0; }
+p.totop a { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #000; text-decoration: none; border-bottom: 1px solid #000; }
+p.totop a:hover { border-bottom-width: 2px; }
+footer nav { display: flex; gap: 28px; }
+footer nav a { color: inherit; text-decoration: none; border-bottom: 0; }
+footer nav a:hover { color: #fff; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+<style id="signal">
+/* Dyalect / Signal design system layer (tokens v1.0): orange, black, white, warm grey.
+   Flat fills, hairlines, radius 4px at most, light display type, mono labels. */
+:root {
+  --purple: #000; --purple-deep: #3B3A37; --ink: #000; --paper: #F4F3EF; --paper-2: #E8E6E0;
+  --lime: #F7611D; --lime-ink: #B63D07; --white: #fff; --muted: #A09E97;
+  --muted-ink: #5B5A55; --line: #3B3A37; --line-ink: #D9D7D0; --rose: #C4281C;
+  --orange: #F7611D; --orange-50: #FFF3EC; --orange-100: #FEE2D2; --orange-900: #431804;
+  --g50: #F4F3EF; --g100: #E8E6E0; --g300: #C2C0B9; --g400: #A09E97; --g500: #7B7973; --g600: #5B5A55; --g700: #3B3A37; --g800: #282828;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+/* colours and components: screen and print */
+/* ---- article ---- */
+h2 { font-weight: 300; font-size: 38px; line-height: 1.12; letter-spacing: -.025em; border-top: 1px solid #000; padding-top: 14px; }
+h2 .n { display: block; width: auto; background: none; color: var(--g600); padding: 0; border-radius: 0;
+        font: 500 12px/1 var(--mono); letter-spacing: .06em; margin: 0 0 28px; }
+h3 { font-weight: 500; font-size: 20px; line-height: 1.25; letter-spacing: -.01em; margin: 48px 0 10px; }
+code { color: #000; background: var(--g100); border: 0; border-radius: 2px; }
+code .tex { color: var(--g600); }
+div.pattern { background: var(--g50); border: 0; border-left: 2px solid #000; border-radius: 0; }
+div.pattern .pat-note { font-weight: 500; letter-spacing: .06em; color: var(--g600); }
+pre { background: var(--g50); border: 0; border-left: 2px solid #000; border-radius: 0; box-shadow: none; }
+pre .c { color: var(--g600); }
+pre .k { color: #000; }
+pre .f { color: var(--g700); }
+hr { border-top: 1px solid var(--g300); }
+.sn, .sn::after, .note::before { color: #000; }
+.note { color: var(--g600); }
+.note a { border-bottom-color: var(--g400); }
+.note a:hover { color: #000; border-bottom-color: #000; }
+.refs { color: var(--g700); }
+.refs li:target { background: var(--orange-50); border-radius: 0; }
+
+.findings { background: #000; color: #fff; border-radius: 4px; box-shadow: none; padding: 28px 32px 14px; }
+.findings p:first-child { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g400); margin-bottom: 16px; }
+.findings li { color: var(--g400); }
+.findings li::marker { color: #fff; }
+.findings b { color: #fff; font-weight: 500; }
+.findings code { color: #fff; background: var(--g800); }
+
+figure { background: #fff; border: 1px solid var(--g300); border-radius: 4px; box-shadow: none; }
+figcaption { color: var(--g600); }
+figcaption .fl { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: #000; margin-bottom: 6px; }
+figcaption b { color: #000; font-weight: 500; }
+
+/* figure 1: the orange poster */
+figure.problem { background: var(--orange); color: #000; border: 0; }
+figure.problem figcaption { color: var(--orange-900); }
+figure.problem figcaption .fl, figure.problem figcaption b { color: #000; }
+.prompt { color: #000; }
+.prompt span { color: var(--orange-900); }
+.rc { background: #fff; border-radius: 2px; box-shadow: none; }
+.who { color: var(--g600); }
+.verdict { border-radius: 2px; font-weight: 500; }
+.verdict.bad, mark.bad { background: #FCE6E3; color: #C4281C; }
+.verdict.good, mark.ok { background: #000; color: #fff; }
+mark.bad, mark.ok { border-radius: 2px; }
+
+.pair { background: #000; border-radius: 4px; }
+.pair .lab { color: var(--g400); }
+.pair .d { background: var(--orange); color: #000; border-radius: 2px; font-weight: 500; }
+.pair .d.o { background: #FDC3A3; }
+.pair .x { color: #FDC3A3; }
+
+/* weight explorer */
+.wx-tab { background: #fff; border: 1px solid var(--g300); border-radius: 2px; }
+.wx-tab span { background: var(--g100); color: #000; border-radius: 2px; }
+.wx-tab:hover { border-color: #000; }
+.wx-tab.on { background: #000; color: #fff; border-color: #000; }
+.wx-tab.on span { background: var(--orange); color: #000; }
+.wx-jumps { background: var(--g100); border-radius: 2px; }
+.wx-jump { border-radius: 2px; font-weight: 500; }
+.wx-frame { background: var(--g50); border-radius: 2px; }
+.wx-lab { border-radius: 2px; font-weight: 500; }
+.wx-lab.r { background: var(--orange); color: #000; }
+.wx-handle, .wx-handle span { background: #000; }
+.wx-handle span { color: #fff; box-shadow: none; }
+.wx-tip { background: #000; border-radius: 2px; box-shadow: none; }
+.wx-tip b { color: #F98046; }
+.wx-stats .sw { border-radius: 0; }
+.wx-stats .sw.a { background: var(--orange); }
+
+/* figure 8: the /zh trace */
+.tk { border-radius: 2px; }
+.tk.on { background: var(--g100); color: #000; }
+.tk.first { background: var(--orange); color: #000; font-weight: 500; }
+.tk.cmd { outline: 1.5px solid #000; color: #000; }
+.sw { border-radius: 0; }
+.sw.on { background: var(--g100); border: 1px solid var(--g300); }
+.sw.first { background: var(--orange); }
+.ft { border-left-color: var(--g300); }
+.ftb { background: var(--g100); border-radius: 0; }
+.ftb i { background: #000; border-radius: 0; }
+table.lens td { border-top-color: var(--g100); }
+table.lens td.lm { font-weight: 500; }
+table.lens tr.hl td { background: var(--orange-50); }
+.chip { background: var(--g100); color: #000; border-radius: 2px; }
+
+@media screen {
+  /* body text justified with hyphenation; captions and the lead stay flush left */
+  main p, main li, .hero .lead { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  figcaption { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+  main { max-width: 1296px; padding: 88px 48px 128px; }
+  h2 { margin: 104px 0 24px; }
+  figure { padding: 28px 28px 22px; }
+  body { background: #fff; color: #000; }
+  a { color: #000; border-bottom: 1px solid var(--g400); transition: border-color 120ms var(--ease); }
+  a:hover { border-bottom-color: #000; }
+  :focus-visible { outline: 2px solid #CF4607; outline-offset: 2px; border-radius: 0; }
+  [data-theme="dark"] :focus-visible { outline-color: #F98046; }
+
+  /* ---- top bar + hero ---- */
+  .wrap { width: 100%; max-width: 1296px; margin: 0 auto; padding: 0 48px; }
+  .hero { background: #000; color: #fff; }
+  .hero::before, .orb { display: none; }
+  .top { display: block; margin: 0; border-bottom: 1px solid var(--g700); }
+  .top .wrap { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #fff; border: 0; }
+  .mark { width: 24px; height: 24px; flex: none; display: block; }
+  .word { font-size: 19px; font-weight: 500; letter-spacing: -.02em; line-height: 1; text-transform: none; }
+  .tabs { display: flex; gap: 28px; }
+  .tabs a { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g400);
+            padding: 8px 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; opacity: 1; background: none; }
+  .tabs a .n { margin-right: 8px; opacity: .6; }
+  .tabs a:hover { color: #fff; background: none; }
+  .tabs a.on { color: #fff; border-bottom-color: #fff; background: none; }
+  .hero-in { max-width: 1296px; padding: 112px 48px 0; }
+  .kicker { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g400); gap: 16px; margin-bottom: 28px; }
+  .kicker .n { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid #fff; border-radius: 2px;
+               background: none; color: #fff; font-weight: 500; font-size: 11px; }
+  .hero h1 { font-weight: 300; font-size: clamp(44px, 6.4vw, 92px); line-height: 1.0; letter-spacing: -.035em; max-width: 13em; }
+  .hero h1 .hl { color: var(--orange); }
+  .hero .lead { font-size: 20px; line-height: 1.55; color: var(--g400); max-width: 46em; margin: 36px 0 0;
+                text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  .hero .lead .math { color: #fff; }
+  .byline { margin-top: 72px; border-top: 1px solid var(--g700); padding: 16px 0 24px; font: 500 12px/1.3 var(--mono);
+            letter-spacing: .06em; color: var(--g400); }
+  .byline b { color: #fff; font-weight: 500; }
+  .byline .pdf { float: right; margin: -6px 0 0 16px; padding: 6px 10px; border: 1px solid #fff; border-radius: 2px; color: #fff;
+                 letter-spacing: .06em; transition: background 120ms var(--ease), color 120ms var(--ease); }
+  .byline .pdf:hover { background: #fff; color: #000; border-color: #fff; }
+
+  /* ---- footer (same as the rest of the site) ---- */
+  footer.site { background: #000; color: #fff; padding-top: 64px; overflow: hidden; }
+  footer.site div { max-width: none; margin: 0; padding: 0; display: block; font: inherit; letter-spacing: normal; text-transform: none; }
+  footer.site .wrap { max-width: 1296px; margin: 0 auto; padding: 0 48px; }
+  footer.site .foot { display: flex; justify-content: space-between; gap: 24px 48px; flex-wrap: wrap; align-items: flex-start; }
+  footer.site .brand .word { font-size: 17px; }
+  footer.site p { margin: 12px 0 0; font-size: 15px; line-height: 1.55; color: var(--g400); max-width: 36ch; text-align: left; }
+  footer.site nav { display: flex; gap: 12px 28px; flex-wrap: wrap; font-size: 17px; }
+  footer.site nav a { color: var(--g400); border: 0; }
+  footer.site nav a:hover { color: #fff; }
+  footer.site .giant { font-weight: 300; font-size: clamp(56px, 10vw, 136px); line-height: .8; letter-spacing: -.045em;
+                       margin: 64px 0 0; white-space: nowrap; user-select: none; color: #fff; max-width: none; }
+  footer.site .base { border-top: 1px solid var(--g700); margin-top: 40px; padding: 16px 0 24px; display: flex; justify-content: space-between;
+                      gap: 8px 24px; flex-wrap: wrap; color: var(--g400); font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+
+  @media (max-width: 1180px) { .note::before { color: var(--g600); } }
+  @media (max-width: 760px) {
+    .wrap, footer.site .wrap { padding: 0 24px; }
+    .tabs { gap: 20px; }
+    .tabs a .n { display: none; }
+    .hero-in { padding: 64px 24px 0; }
+    .hero h1 { font-size: 44px; }
+    .hero .lead { font-size: 18px; }
+    .byline { margin-top: 48px; font-size: 11px; letter-spacing: .04em; }
+    .byline .pdf { float: none; display: block; width: max-content; margin: 14px 0 0; }
+    main { padding: 56px 24px 88px; }
+    h2 { font-size: 30px; margin-top: 80px; }
+    figure { padding: 18px 16px 14px; border-radius: 4px; }
+    footer.site .giant { margin-top: 48px; }
+  }
+}
+@media print {
+  .print-brand span { font: 500 16px/1 'Helvetica Neue', Arial, sans-serif !important; letter-spacing: -.01em !important; text-transform: none !important; color: #000 !important; }
+  .print-brand .mark { color: #000; }
+  .hero h1 { font-weight: 300 !important; letter-spacing: -.025em !important; }
+  .hero h1 .hl { color: #000 !important; }
+  .kicker .n { color: #B63D07 !important; }
+  a.figref, a.sn { color: #000 !important; }
+  figure.problem { background: #F7611D !important; color: #000 !important; }
+  figure.problem figcaption { color: #431804 !important; }
+  figure { border-radius: 2px !important; }
+  footer.site { display: none !important; }
+  figure.wide .scroll::after { content: none !important; }
+  figure.problem .rc { background: #fff !important; }
+  h2 .n { margin-bottom: 4mm !important; }
+}
+
+/* reading bar: the current section and how far through the article you are */
+.readbar { position: fixed; left: 0; right: 0; top: 0; z-index: 50; height: 44px; background: #fff; border-bottom: 1px solid var(--g300);
+           transform: translateY(-101%); transition: transform 200ms var(--ease); }
+.readbar.show { transform: none; }
+.readbar .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.readbar a { display: flex; align-items: baseline; gap: 12px; min-width: 0; color: #000; border: 0; font-size: 14px; }
+.readbar .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--g600); flex: none; }
+.readbar .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.readbar .pct { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--g600); flex: none; }
+.readbar i { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; background: #000; }
+@media (max-width: 760px) { .readbar .wrap { padding: 0 24px; } }
+@media print { .readbar { display: none !important; } }
+
+/* contents: a hairline list, no box */
+@media screen {
+  nav.toc { margin: 0 0 72px; padding: 0; background: none; border: 0; border-top: 1px solid #000; border-radius: 0; box-shadow: none; }
+  nav.toc .toc-h { display: flex; justify-content: space-between; margin: 0; padding: 12px 0 14px;
+                   font: 500 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g600); }
+  nav.toc ol { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--g300); }
+  nav.toc li { margin: 0; }
+  nav.toc li.l2 { border-top: 1px solid var(--g100); }
+  nav.toc li.l2 + li.l2 { margin-top: 0; }
+  nav.toc a { position: relative; display: grid; grid-template-columns: 44px 1fr; align-items: baseline; gap: 0; margin: 0;
+              padding: 11px 32px 11px 0; border: 0; border-radius: 0; background: none; color: #000; font-size: 16px; line-height: 1.35;
+              transition: color 120ms var(--ease); }
+  nav.toc a::after { content: "→"; position: absolute; right: 4px; top: 11px; opacity: 0; transform: translateX(-4px);
+                     transition: opacity 120ms var(--ease), transform 120ms var(--ease); }
+  nav.toc a:hover { background: none; }
+  nav.toc a:hover .t { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+  nav.toc a:hover::after { opacity: 1; transform: none; }
+  nav.toc .n { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--g500); }
+  nav.toc li.l3 a { padding: 0 32px 11px 0; margin-top: -3px; font-size: 14px; color: var(--g600); grid-template-columns: 44px 1fr; }
+  nav.toc li.l3 a::before { content: "↳"; grid-column: 1; color: var(--g400); font-size: 12px; }
+  nav.toc li.l3 .n { display: none; }
+  nav.toc li.l3 a:hover { color: #000; }
+  nav.toc li.l3 a::after { top: 0; }
+  nav.toc + h2, nav.toc + span + h2 { margin-top: 0; }
+}
+
+/* the back link sits flush left in every post */
+p.totop { text-align: left; }
+
+/* Weight-writing post: its own components on Signal (after the shared layer) */
+.fig-title { font-weight: 500; font-size: 17px; letter-spacing: -.01em; color: #000; }
+.fig-sub { color: var(--g600); }
+.legend i { border-radius: 0; }
+
+/* figure 1: the result on a black panel */
+figure.problem { background: #000; color: #fff; border: 0; }
+figure.problem figcaption { color: var(--g400); }
+figure.problem figcaption .fl, figure.problem figcaption b { color: #fff; }
+
+/* figure 3: the metric and the budget slider */
+.rule { background: var(--g50); border: 0; border-radius: 2px; }
+.rule .tag { font: 500 11px/1 var(--mono); letter-spacing: .06em; padding: 5px 8px; border: 1px solid #000; border-radius: 2px; color: #000; background: transparent; }
+.rule b { font-weight: 500; }
+.rule p { color: var(--g600); }
+.rule-diagram::before { top: 23px; height: 2px; border-radius: 0; background: var(--g300); }
+.rule-diagram .own { background: #000; }
+.rule-diagram .budget { background: var(--orange); }
+.rule-diagram .own::after { color: #000; font-weight: 500; }
+.rule-diagram .budget::after { color: #B63D07; font-weight: 500; }
+.budget-ui { background: var(--g50); border-radius: 2px; padding: 20px 22px 22px; }
+.budget-top label { font-weight: 500; letter-spacing: .06em; color: var(--g600); }
+.budget-read { font: 500 18px/1 var(--mono); color: #000; font-feature-settings: "tnum"; }
+.budget-ui input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin: 0; background: transparent; cursor: pointer; accent-color: #000; }
+.budget-ui input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #000; }
+.budget-ui input[type=range]::-moz-range-track { height: 2px; background: #000; }
+.budget-ui input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -8px; border-radius: 50%; background: #000; border: 3px solid var(--g50); box-shadow: 0 0 0 1px #000; }
+.budget-ui input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #000; border: 3px solid var(--g50); box-shadow: 0 0 0 1px #000; }
+.budget-ui input[type=range]:focus-visible { outline: 2px solid #CF4607; outline-offset: 4px; }
+.budget-ticks { display: flex; justify-content: space-between; margin: 2px 0 20px; padding: 0 3px; font: 500 11px/1 var(--mono); letter-spacing: .02em; color: var(--g500); }
+.budget-ticks button { font: inherit; color: inherit; background: none; border: 0; padding: 4px 0; cursor: pointer; font-feature-settings: "tnum"; }
+.budget-ticks button:hover { color: #000; }
+.budget-ticks button.pub { color: #000; text-decoration: underline; text-underline-offset: 3px; }
+.budget-ticks button.on { color: #000; font-weight: 700; }
+.metric-bars { gap: 8px; }
+.metric-row { grid-template-columns: 150px 1fr 64px; }
+.metric-name { font-size: 13.5px; color: #000; }
+.metric-track { height: 20px; background: #fff; border-radius: 0; }
+.metric-fill { display: block; border-radius: 0; transition: width 200ms var(--ease); }
+.metric-value { font-weight: 500; font-feature-settings: "tnum"; }
+.budget-note { color: var(--g600); }
+.budget-note b { color: #000; font-weight: 500; }
+
+/* figure 4: six steps */
+.step-card { background: var(--g50); border: 0; border-radius: 2px; }
+.step-head { font-weight: 500; }
+.step-num { background: #000; color: #fff; font-weight: 500; width: 20px; height: 20px; }
+.step-card p { color: var(--g600); }
+
+/* figure 6: three teaching conditions */
+.teach-card { background: var(--g50); border: 1px solid transparent; border-radius: 2px; }
+.teach-card.good { background: #fff; border-color: #000; }
+.teach-card b { font-weight: 500; }
+.dot { width: 18px; height: 18px; border: 1.5px solid #C4281C; }
+.dot.on { background: var(--orange); }
+.teach-result { color: #C4281C; font-weight: 500; }
+.teach-card.good .teach-result { color: #000; }
+.teach-card p { color: var(--g600); }
+
+/* figure 7: the pipeline */
+.pipe-item { background: var(--g50); border: 0; border-radius: 2px; }
+.pipe-item::after { color: var(--g500); }
+.pipe-item b { font-weight: 500; }
+.pipe-item span { color: var(--g600); }
+.pipe-item:last-child { background: #000; color: #fff; }
+.pipe-item:last-child span { color: var(--g400); }
+
+/* figure 8: one run */
+.turn { border: 1px solid var(--g300); border-radius: 2px; background: #fff; }
+.turn .tn { color: #000; font-weight: 500; letter-spacing: .06em; }
+.turn pre { border-radius: 0; }
+.turn.done { background: #000; border-color: #000; }
+.turn.done .tn { color: #F98046; }
+.turn.done p { color: var(--g400); }
+
+/* figure 12 badges, moved out of the plot so they cover no data */
+.fig-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.badge { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 8px 10px; border-radius: 2px; }
+.badge.dark { background: #000; color: #fff; }
+.badge.bad { background: #FCE6E3; color: #C4281C; }
+
+/* section 07 */
+.audit-grid { gap: 24px; margin: 28px 0; }
+.audit { background: none; border: 0; border-top: 1px solid #000; border-radius: 0; padding: 12px 0 0; }
+.audit .a-k { font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g600); }
+.audit b { font-weight: 300; font-size: 36px; line-height: 1.1; letter-spacing: -.02em; margin: 10px 0 8px; }
+.audit span { color: var(--g600); }
+.call { border-left: 2px solid #000; background: var(--g50); border-radius: 0; }
+.call p { color: var(--g700); }
+.call b { font-weight: 500; }
+.repo-map { border: 1px solid var(--g300); border-radius: 2px; }
+.repo-map div { border-top-color: var(--g200, #D9D7D0); }
+.repo-map div:nth-child(odd) { color: #000; background: var(--g50); }
+
+/* chart text */
+.chart-title { font-weight: 500; fill: #000; }
+.chart-muted, .chart-tick { fill: var(--g600); }
+.chart-lab { fill: #000; }
+
+@media screen {
+  /* hero numbers: hairline columns, light figures */
+  .hero .lead { max-width: 46em; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-top: 64px; max-width: none; }
+  .hero .stats { max-width: none; }
+  .stat, .hero .stat, .hero .stat:first-child { background: none; border: 0; border-top: 1px solid #fff; border-radius: 0; padding: 12px 0 0;
+                                               min-width: 0; max-width: none; }
+  .stat .k { display: block; font: 500 12px/1.3 var(--mono); letter-spacing: .06em; color: var(--g400); opacity: 1; margin: 0 0 18px; }
+  .stat b, .hero .stat:first-child b { font-weight: 300; font-size: 56px; line-height: 1; letter-spacing: -.035em; color: #fff; }
+  .stat span:last-child { font-size: 14px; line-height: 1.45; color: var(--g400); margin-top: 12px; }
+  .byline { margin-top: 56px; }
+}
+@media screen and (max-width: 900px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 32px; }
+}
+@media screen and (max-width: 760px) {
+  .stat b, .hero .stat:first-child b { font-size: 40px; }
+  .metric-row { grid-template-columns: 112px 1fr 52px; }
+  .budget-ticks { font-size: 10px; }
+}
+@media print {
+  .budget-ticks { display: none; }
+  .stat b { color: #000 !important; }
+}
+@media print {
+  figure.problem { background: #000 !important; color: #fff !important; }
+  figure.problem figcaption { color: #A09E97 !important; }
+  figure.problem figcaption .fl, figure.problem figcaption b { color: #fff !important; }
+  .stats { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 5mm; margin-top: 6mm; }
+  .stat { background: none !important; border: 0 !important; border-top: .6pt solid #000 !important; border-radius: 0 !important; padding: 2mm 0 0 !important; min-width: 0 !important; }
+  .stat .k { color: #5B5A55 !important; opacity: 1 !important; font-size: 9px !important; }
+  .stat b { font-size: 26px !important; font-weight: 300 !important; }
+  .stat span:last-child { color: #3B3A37 !important; font-size: 11px !important; }
+  .readbar, .budget-ticks { display: none !important; }
+}
+@media screen and (max-width: 640px) {
+  /* a narrow column cannot justify without rivers: flush left on phones */
+  main p, main li, .hero .lead { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
+}
+/* typesetting: fewer loose lines and lone last words; balanced headings */
+main p, main li, .hero .lead { text-wrap: pretty; }
+h1, h2, h3, .fig-title { text-wrap: balance; }
+</style>
+<style id="p2-canvas">
+/* round 3: ladder matrix, forecast table, pull quotes, near-miss list */
+blockquote.pull { margin: 30px 0; padding: 2px 0 2px 22px; border-left: 2px solid var(--orange, #F7611D); }
+blockquote.pull p { margin: 0; font-size: 22px; line-height: 1.4; font-weight: 300; letter-spacing: -.01em; color: #000; text-align: left; hyphens: manual; }
+blockquote.pull cite { display: block; margin-top: 10px; font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; font-style: normal; color: var(--g600); }
+.ladder { font-size: 14px; line-height: 1.4; }
+.lad-row { display: grid; grid-template-columns: 168px repeat(6, 62px) minmax(0, 1fr); gap: 0 10px; align-items: center;
+           padding: 11px 0; border-top: 1px solid var(--g300); }
+.lad-row.lad-head { border-top: 0; padding-top: 0; align-items: end; font: 500 11px/1.25 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--g600); }
+.lad-head .lad-step { text-align: center; }
+.lad-head .short { display: none; }
+.lad-row.good { background: var(--g50); box-shadow: inset 2px 0 0 var(--orange, #F7611D); padding-left: 10px; margin-left: -10px; }
+.lad-model b { display: block; font-weight: 500; color: #000; }
+.lad-model span { display: block; font: 12px/1.3 var(--mono); color: var(--g600); margin-top: 2px; }
+.lad-cell { text-align: center; }
+.lad-note { color: var(--g700); font-size: 13.5px; text-align: left; }
+.mk { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; box-sizing: border-box; }
+.mk.y { background: #000; }
+.mk.p { border: 1.5px solid #000; background: linear-gradient(90deg, #000 50%, transparent 50%); }
+.mk.n { border: 1.5px solid #C4281C; background: #FCE6E3; }
+.mk.x { width: 12px; height: 2px; border-radius: 0; background: var(--g300); }
+.lad-key { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font: 12px/1.4 var(--mono); color: var(--g600); }
+.lad-key .mk { margin-right: 6px; }
+.lad-key .lad-legend { display: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.fc { font-size: 14px; line-height: 1.45; }
+.fc-row { display: grid; grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr) 118px; gap: 0 18px; padding: 11px 0; border-top: 1px solid var(--g300); align-items: start; }
+.fc-row.fc-head { border-top: 0; padding-top: 0; font: 500 11px/1.25 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--g600); }
+.fc-row.good { background: var(--g50); box-shadow: inset 2px 0 0 var(--orange, #F7611D); padding-left: 10px; margin-left: -10px; }
+.fc-who b { display: block; font-weight: 500; color: #000; }
+.fc-who span { display: block; font: 12px/1.3 var(--mono); color: var(--g600); margin-top: 2px; }
+.fc-row > div { text-align: left; color: var(--g700); }
+.fc-k { display: none; }
+.fc-v { display: inline-block; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 6px 8px; border-radius: 2px; white-space: nowrap; }
+.fc-v.ok { background: #000; color: #fff; }
+.fc-v.bad { background: #FCE6E3; color: #C4281C; }
+.nm-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 18px 0 0; }
+.nm-list div { border-top: 1px solid #000; padding-top: 10px; font-size: 13.5px; line-height: 1.4; color: var(--g700); }
+.nm-list b { display: block; font-weight: 300; font-size: 32px; line-height: 1.1; letter-spacing: -.02em; color: #000; margin: 6px 0 4px; }
+.nm-list .k { font: 500 12px/1.3 var(--mono); letter-spacing: .04em; color: #000; }
+.audit-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media screen and (max-width: 900px) {
+  .lad-row { grid-template-columns: minmax(0, 1fr) repeat(6, 24px); gap: 4px 6px; }
+  .lad-row .lad-note { grid-column: 1 / -1; }
+  .lad-head .lad-note { display: none; }
+  .lad-head .full { display: none; }
+  .lad-head .short { display: inline; }
+  .lad-key .lad-legend { display: block; flex-basis: 100%; }
+  .fc-row { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .fc-row.fc-head { display: none; }
+  .fc-row > div:nth-child(2), .fc-row > div:nth-child(3) { grid-column: 1 / -1; }
+  .fc-row > div:nth-child(4) { grid-row: 1; grid-column: 2; }
+  .fc-k { display: inline-block; width: 38px; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g500); }
+  .audit-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media screen and (max-width: 760px) {
+  .nm-list { grid-template-columns: 1fr; gap: 14px; }
+  .audit-grid.four { grid-template-columns: 1fr; }
+  blockquote.pull p { font-size: 19px; }
+}
+@media print {
+  .ladder, .fc, .nm-list, blockquote.pull { break-inside: avoid; }
+  .lad-row, .fc-row { padding: 1.6mm 0; }
+  .ladder, .fc { font-size: 10px; }
+  .lad-row { grid-template-columns: 28mm repeat(6, 12.5mm) minmax(0, 1fr); }
+  .lad-note, .fc-row > div { font-size: 9.5px; }
+  .fc-row { grid-template-columns: 32mm minmax(0, 1fr) minmax(0, 1fr) 25mm; gap: 0 3mm; }
+  .fc-v { font-size: 7.5px; padding: 4px 5px; }
+  .lad-model span, .fc-who span { font-size: 8px; }
+  .lad-row.lad-head { font-size: 7px; letter-spacing: 0; }
+  .lad-row { gap: 0 2mm; }
+  .mk.y, .mk.p, .fc-v.ok { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  blockquote.pull p { font-size: 15px; }
+}
+</style>
+<style id="tldr-chart">
+/* at-a-glance chart beside the summary; dark on screen, ink on paper */
+.tldr { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 0 56px; align-items: start; margin: 36px 0 0; }
+.tldr > .lead { margin-top: 0; }
+.tldr-chart { --hc-ink: #fff; --hc-muted: #A09E97; --hc-bar: #5B5A55; --hc-line: rgba(255,255,255,.18); --hc-ours: #F7611D;
+              border-top: 1px solid var(--hc-line); padding-top: 14px; }
+.tldr-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tldr-chart .t { fill: var(--hc-muted); font: 500 11px var(--mono); letter-spacing: .06em; }
+.tldr-chart .l { fill: var(--hc-ink); font: 400 13px var(--sans); }
+.tldr-chart .v { fill: var(--hc-ink); font: 500 12px var(--mono); font-feature-settings: "tnum"; }
+.tldr-chart .v.o { fill: var(--hc-ours); }
+.tldr-chart .m { fill: var(--hc-muted); font: 400 11.5px var(--sans); }
+.tldr-chart .bar { fill: var(--hc-bar); }
+.tldr-chart .bar.o { fill: var(--hc-ours); }
+.tldr-chart .bar.w { fill: var(--hc-ink); }
+.tldr-chart .ref { fill: none; stroke: var(--hc-muted); stroke-dasharray: 3 3; }
+.tldr-chart .x { stroke: var(--hc-muted); stroke-width: 1.5; }
+.tldr-chart .track { fill: var(--hc-line); }
+@media screen and (max-width: 1100px) {
+  .tldr { grid-template-columns: minmax(0, 1fr); }
+  .tldr-chart { margin-top: 36px; max-width: 520px; }
+}
+@media print {
+  .tldr { display: block; margin-top: 4mm; }
+  .tldr-chart { --hc-ink: #000; --hc-muted: #5B5A55; --hc-bar: #A09E97; --hc-line: rgba(0,0,0,.14);
+                max-width: 110mm; margin-top: 5mm; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+<style id="figure-compact">
+/* square charts sit in the text column at a height that matches the wide charts */
+figure.compact .scroll svg { display: block; max-width: 560px; margin: 0 auto; }
+@media screen and (max-width: 760px) {
+  figure.compact .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 0 16px; }
+  figure.compact .scroll svg { min-width: 480px; }
+  figure.compact .scroll::after { content: "scroll →"; display: block; font: 11px var(--mono); color: var(--muted-ink); margin-top: 6px; }
+}
+@media print { figure.compact .scroll svg { max-width: 105mm !important; margin: 0 auto !important; } }
+</style>
+<style id="judges">
+/* the evaluation post: text tables, the case figure, numbered lists */
+.gt-wrap { overflow-x: auto; margin: 20px 0 28px; }
+table.gt { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.45; }
+table.gt th { font: 500 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g600); text-align: left; padding: 0 12px 8px 0; border-bottom: 1px solid #000; }
+table.gt td { padding: 9px 12px 9px 0; border-top: 1px solid var(--g100); vertical-align: top; text-align: left; hyphens: none; }
+table.gt tr:first-child td { border-top: 0; }
+table.gt td:first-child { font-weight: 500; color: #000; width: 26%; }
+ol.gt-list { padding-left: 1.3em; } ol.gt-list li { margin: .55em 0; }
+.cg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.cg-c { background: var(--g50); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.4; text-align: left; }
+.cg-c b { font-weight: 600; font-size: 14px; }
+.cg-c .trap { border-left: 2px solid var(--orange); padding-left: 8px; color: #000; }
+.cg-g { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.cg-g i { display: block; font: 500 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; font-style: normal; color: var(--g600); border-top: 1px solid #000; padding-top: 8px; margin-bottom: 6px; }
+.cg-g p { margin: 0; font-size: 13.5px; line-height: 1.45; text-align: left; hyphens: none; }
+.cg-r { border-top: 1px solid #000; padding-top: 10px; margin-top: 6px; font-size: 14px; text-align: left; }
+.cg-r .bad { color: var(--rose); margin-right: 8px; font-family: var(--mono); }
+.findings ol.rules { margin: 0; padding-left: 1.4em; } .findings ol.rules li { margin: .4em 0; }
+@media screen and (max-width: 900px) { .cg { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cg-g { grid-template-columns: 1fr; } }
+@media screen and (max-width: 560px) {
+  .cg { grid-template-columns: 1fr; }
+  table.gt thead { display: none; }
+  table.gt tr { display: block; border-top: 1px solid var(--g100); padding: 8px 0; }
+  table.gt td { display: block; border: 0; padding: 2px 0; width: auto !important; }
+}
+@media print { .cg { grid-template-columns: repeat(4, 1fr); gap: 3mm; } .cg-g { grid-template-columns: repeat(3, 1fr); gap: 3mm; } table.gt { font-size: 9pt; } .cg-c, .cg-g p, .cg-r { font-size: 8.5pt; } }
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="hero" id="top" data-theme="dark">
+<nav class="top"><div class="wrap"><a class="brand" href="../" aria-label="Dyalect home"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span class="word">dyalect</span></a><div class="tabs"><a href="../"><span class="n">01</span>Home</a><a href="../posts/" class="on"><span class="n">02</span>Blog</a></div></div></nav>
+<div class="hero-in">
+<div class="print-brand"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span>dyalect</span></div>
+<div class="kicker"><span class="n">Evaluation</span>From general judges to specified cases</div>
+<h1>Decide what good means <span class="hl">before the run</span>, not while grading it.</h1>
+<div class="tldr"><p class="lead">Many teams test an AI system with a judge that reads the whole run and gives a score. That is quick to start and fine for finding failures, but the score moves without a reason, hides failures inside an average, and cannot approve a release or serve as a training reward. A mature evaluation writes down what good means before the run, checks what the system actually left behind, asks a judge one narrow question at a time, and measures the judge against people. What the two stages are, one worked case, and six questions to find where you are.</p></div>
+<div class="stats">
+  <div class="stat"><span class="k">Stage 1</span><b>General judges</b><span>Where most teams are. Right for discovery and monitoring.</span></div>
+  <div class="stat"><span class="k">Stage 2</span><b>Specified cases</b><span>Where to get to. The case says what a pass is.</span></div>
+  <div class="stat"><span class="k">The test</span><b>4 questions</b><span>Written before, real state, minimal evidence, measured judge.</span></div>
+  <div class="stat"><span class="k">Where are you</span><b>6 questions</b><span>Answer them for your own evaluation today.</span></div>
+</div>
+<div class="byline"><b>Dyalect Research</b> · Nov 27, 2026 · 17 min read<a class="pdf" href="paper.pdf" download="dyalect_blog_decide-what-good-means-before-the-run-not-while-grading-it.pdf">PDF ↓</a></div>
+</div>
+</header>
+<main id="main"><article class="col">
+<nav class="toc" id="toc" aria-label="Contents">
+  <p class="toc-h">Contents</p>
+  <ol>
+    <li class="l2"><a href="#overview"><span class="n">00</span><span class="t">Overview</span></a></li>
+    <li class="l2"><a href="#today"><span class="n">01</span><span class="t">How most teams evaluate today</span></a></li>
+    <li class="l2"><a href="#right"><span class="n">02</span><span class="t">What right looks like</span></a></li>
+    <li class="l3"><a href="#evidence"><span class="n"></span><span class="t">Small questions, small evidence</span></a></li>
+    <li class="l2"><a href="#shift"><span class="n">03</span><span class="t">Seven shifts</span></a></li>
+    <li class="l2"><a href="#pitfalls"><span class="n">04</span><span class="t">Pitfalls</span></a></li>
+    <li class="l3"><a href="#half"><span class="n"></span><span class="t">The half move</span></a></li>
+    <li class="l3"><a href="#rows"><span class="n"></span><span class="t">Eight ways rows go bad</span></a></li>
+    <li class="l3"><a href="#process"><span class="n"></span><span class="t">Seven shortcuts</span></a></li>
+    <li class="l2"><a href="#reading"><span class="n">05</span><span class="t">Reading the result</span></a></li>
+    <li class="l2"><a href="#reliability"><span class="n">06</span><span class="t">Judge reliability and training</span></a></li>
+    <li class="l2"><a href="#todo"><span class="n">07</span><span class="t">What to do</span></a></li>
+    <li class="l3"><a href="#where"><span class="n"></span><span class="t">Find where you are</span></a></li>
+    <li class="l3"><a href="#steps"><span class="n"></span><span class="t">Nine steps</span></a></li>
+    <li class="l3"><a href="#costs"><span class="n"></span><span class="t">Costs and limits</span></a></li>
+    <li class="l3"><a href="#rules"><span class="n"></span><span class="t">Ten rules</span></a></li>
+  </ol>
+</nav>
+
+<h2 id="overview"><span class="n">00</span>Overview</h2>
+<p>Most teams that test an AI system today do it with a judge: another model reads the whole run, works out what success means, and gives a score. The score moves from 0.87 to 0.81 and nobody can say why. Did the system get worse, or did the judge read it differently?</p>
+<p>A more mature evaluation moves the decision. It decides what a good result is <em>before</em> the run, inside each test case, and grading only checks (<a class="figref" href="#figure-1">Figure 1</a>). The system runs for real from a known starting state. Code checks what it left behind. A judge answers one narrow yes/no question at a time, and only after it has been measured against people.</p>
+<p>We call the two ways <b>stage 1</b>, general judges, and <b>stage 2</b>, specified cases. Stage 1 is a sensible place to start and the right tool for two jobs: finding out how a new system fails, and watching live traffic. It is not a sound basis for approving a release, and its score should never be the reward a model is trained on. This post explains why, shows what stage 2 looks like with one worked case, and ends with six questions that tell you where you are.</p>
+
+<figure id="figure-1" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 352" width="100%" role="img" aria-label="Two evaluation stages across three moments: before the run, the run, and grading. In stage 1 a judge decides what good means at grading time. In stage 2 the case decides before the run and grading only checks.">
+    <text class="chart-tick" x="40" y="26">BEFORE THE RUN</text><text class="chart-tick" x="370" y="26">THE RUN</text><text class="chart-tick" x="700" y="26">GRADING</text>
+    <line x1="40" x2="960" y1="38" y2="38" stroke="rgba(0,0,0,.10)"/>
+    <text class="chart-title" x="40" y="72">Stage 1 · general judges</text>
+    <text class="chart-muted" x="40" y="92">where most teams are</text>
+    <rect x="40" y="108" width="270" height="62" fill="#F4F3EF"/><text class="chart-lab" x="54" y="134">A handful of example requests</text><text class="chart-muted" x="54" y="154">nothing says what good is</text>
+    <rect x="370" y="108" width="270" height="62" fill="#F4F3EF"/><text class="chart-lab" x="384" y="134">The system runs simulated tools</text><text class="chart-muted" x="384" y="154">canned replies</text>
+    <rect x="700" y="108" width="260" height="62" fill="#fff" stroke="#F7611D" stroke-width="2"/><text class="chart-lab" x="714" y="134">A judge decides what success means</text><text class="chart-lab" x="714" y="154" style="fill:#B63D07">then scores it: 0.83</text>
+    <text class="chart-title" x="40" y="222">Stage 2 · specified cases</text>
+    <text class="chart-muted" x="40" y="242">where to get to</text>
+    <rect x="40" y="258" width="270" height="62" fill="#fff" stroke="#F7611D" stroke-width="2"/><text class="chart-lab" x="54" y="284">Each case states what a pass is</text><text class="chart-muted" x="54" y="304">start, request, outcome, rows</text>
+    <rect x="370" y="258" width="270" height="62" fill="#F4F3EF"/><text class="chart-lab" x="384" y="284">The real system, seeded data</text><text class="chart-muted" x="384" y="304">what it leaves behind is recorded</text>
+    <rect x="700" y="258" width="260" height="62" fill="#F4F3EF"/><text class="chart-lab" x="714" y="284">Grading only checks</text><text class="chart-lab" x="714" y="304" style="fill:#C4281C">FAIL · escalation missing</text>
+    <path d="M310 139h60M640 139h60M310 289h60M640 289h60" stroke="#7B7973" stroke-width="1.5"/>
+    <text class="chart-muted" x="40" y="346" font-size="11">orange outline = where good is decided</text>
+  </svg></div>
+  <figcaption><span class="fl">Figure 1</span><b>Decide what good means before the run, not while grading it.</b> The same three moments in both stages. The orange outline marks where the definition of a good result is written: inside a judge at grading time in stage 1, inside the case before anything runs in stage 2. Illustration.</figcaption>
+</figure>
+
+<h2 id="today"><span class="n">01</span>How most teams evaluate today</h2>
+<p>A stage 1 evaluation has a handful of example requests, tools that are simulated, and general judges that each read the whole transcript and answer a broad question: was the task completed, was anything made up, was anything unsafe. The scores are averaged and compared with a pass mark. It is quick to set up, takes almost no work per example, and runs on anything, including live traffic. Many teams stay here long after they start making release decisions on the number. Seven things go wrong.</p>
+<ol class="gt-list">
+  <li><b>Nobody wrote down what should happen.</b> Ask a judge whether a digest of follow-ups is complete and it must decide, run by run, what complete means. Its idea may differ from yours and from its own next idea.</li>
+  <li><b>It grades what was said, not what was done.</b> “Done. I’ve created the task” can sit beside zero new tasks in the system. With simulated tools no task could exist, so there is nothing to look at.</li>
+  <li><b>Big questions get unstable answers.</b> A broad question over a long answer leaves a judge room to disagree with experts, and with itself: the same bundled question asked twice can change its answer.</li>
+  <li><b>The judge reads everything.</b> Long material makes a judge miss what is there, and a confident “all done” sways it.</li>
+  <li><b>A score hides the failure.</b> Four things right and one overlooked restriction scores 0.8. Averaged with other runs it clears the pass mark.</li>
+  <li><b>Nobody has measured the judge.</b> Reviewing verdicts you can already see mostly confirms them and never finds what the judge waved through.</li>
+  <li><b>A bad number does not say what to fix.</b> “Task completion fell from 0.87 to 0.81” names no behaviour. Somebody has to read transcripts to find out.</li>
+</ol>
+<p>Put together, the number moves and you cannot tell whether the system changed or the judge read it differently. That is acceptable for exploring. It is not a basis for approving a release. The same run can pass as a score and fail as a check (<a class="figref" href="#figure-2">Figure 2</a>).</p>
+
+<figure id="figure-2" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 250" width="100%" role="img" aria-label="The same run as two readings. As a score it is 0.95, above a pass mark of 0.85. As a set of checks, 18 of 19 pass, one fails, and the run fails: the escalation to the payments team is missing.">
+    <text class="chart-title" x="40" y="30">As a score</text>
+    <rect x="40" y="60" width="400" height="28" fill="#E8E6E0"/><rect x="40" y="60" width="380" height="28" fill="#1C1C1C"/>
+    <line x1="380" x2="380" y1="50" y2="100" stroke="#C4281C" stroke-dasharray="5 4"/><text class="chart-muted" x="380" y="116" text-anchor="middle">pass mark 0.85</text>
+    <text class="chart-lab" x="428" y="80" font-weight="600">0.95</text>
+    <text class="chart-muted" x="40" y="150">Passes. Nobody learns that a required follow-up</text><text class="chart-muted" x="40" y="168">was left out.</text>
+    <text class="chart-title" x="540" y="30">As a set of checks</text>
+    <g><rect x="540" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="568" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="596" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="624" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="652" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="680" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="708" y="50" width="22" height="22" fill="#C4281C"/><rect x="736" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="764" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="792" y="50" width="22" height="22" fill="#1C1C1C"/><rect x="540" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="568" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="596" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="624" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="652" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="680" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="708" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="736" y="78" width="22" height="22" fill="#1C1C1C"/><rect x="764" y="78" width="22" height="22" fill="#1C1C1C"/></g>
+    <text class="chart-lab" x="540" y="130" style="fill:#C4281C;font-weight:600">FAIL</text>
+    <text class="chart-muted" x="540" y="150">18 of 19 checks pass. The reply leaves out the</text><text class="chart-muted" x="540" y="168">escalation to the payments team. The result says</text><text class="chart-muted" x="540" y="186">what to fix. Everything else was right.</text>
+    <text class="chart-muted" x="40" y="236" font-size="11">Same run, two rulers.</text>
+  </svg></div>
+  <figcaption><span class="fl">Figure 2</span><b>One missed follow-up passes as 0.95 and fails as a check.</b> The run is the worked case below: six code checks and thirteen yes/no rows, of which exactly one fails. Illustration.</figcaption>
+</figure>
+
+<h2 id="right"><span class="n">02</span>What right looks like</h2>
+<p>In a stage 2 evaluation every case says what a pass is before anything runs. A case has eight parts, and they split into what the system is given, what the run must leave behind, and what the output must say.</p>
+<div class="gt-wrap"><table class="gt">
+<thead><tr><th>Part</th><th>What it holds</th><th>Checked by</th></tr></thead>
+<tbody>
+<tr><td>Starting state</td><td>Everything the system can see or reach, seeded from synthetic data with the clock fixed</td><td>—</td></tr>
+<tr><td>Request</td><td>What the user asks, worded as a user would, with no hint of the traps</td><td>—</td></tr>
+<tr><td>Must be true afterwards</td><td>The records, files or messages that must exist</td><td>Code</td></tr>
+<tr><td>May change</td><td>What may change without failing the run. Nothing else may</td><td>Code</td></tr>
+<tr><td>May do, must do</td><td>The tools allowed, and the actions needed for the result to be trusted</td><td>Code</td></tr>
+<tr><td>Wanted rows</td><td>Yes/no questions about features the output must have</td><td>A judge</td></tr>
+<tr><td>Unwanted rows</td><td>Yes/no questions about features the output must not have, each with a planted trap</td><td>A judge</td></tr>
+<tr><td>Evidence for each row</td><td>What is needed to answer that row and nothing more</td><td>—</td></tr>
+</tbody></table></div>
+<p>Here is one case, end to end. A support assistant is asked to review the user’s recent account reviews and write a digest of required and overdue follow-ups. Four reviews are seeded, with traps planted on purpose. The system runs for real against them (<a class="figref" href="#figure-3">Figure 3</a>).</p>
+
+<figure id="figure-3" class="wide">
+  <div class="fig-title">One case, graded</div>
+  <div class="fig-sub">Request: “Review my recent account reviews and create a daily digest of required and overdue follow-ups.” Orange tags mark a trap planted on purpose.</div>
+  <div class="cg">
+    <div class="cg-c"><b>A · Billing review</b><span>Re-run the usage report in 3 months</span><span>Escalate to the payments team</span><span>Review the error rate in 2 weeks</span><span class="trap">Upgrade only if the error rate is still high</span><span class="trap">Cause of the duplicate charges not established</span></div>
+    <div class="cg-c"><b>B · Outage follow-up</b><span>Re-run the health check today</span><span>Open an incident call today</span><span class="trap">An open task already tracks it</span></div>
+    <div class="cg-c"><b>C · Hosting migration</b><span>Review in 48 hours</span><span class="trap">The contract forbids any US region, beside a need for a new region</span></div>
+    <div class="cg-c"><b>D · Routine review</b><span class="trap">No follow-up needed: tempts an invented one</span></div>
+  </div>
+  <div class="cg-g">
+    <div><i>Code · 6 checks on what the run did</i><p>The run completed. The trace is complete. Exactly one chat was created. Nothing else changed. Only permitted tools were used. The notes for A, B and C and the open tasks were read.</p></div>
+    <div><i>Judge · 7 wanted rows, one fact each</i><p>The usage report re-run. The payments escalation. The error rate review. The health check today. The incident call today. Outage already tracked. The migration review at 48 hours.</p></div>
+    <div><i>Judge · 6 unwanted rows, one trap each</i><p>No US region. No upgrade now. No plan change. No cause stated as established. No follow-up for review D. No new task for the outage.</p></div>
+  </div>
+  <div class="cg-r"><b class="bad">FAIL</b> One row failed: the reply leaves out the escalation to the payments team. The result names what to fix.</div>
+  <figcaption><span class="fl">Figure 3</span><b>Eighteen of nineteen checks pass and the run fails.</b> Every row is one fact, anchored in the seeded data. Illustration; all data is invented.</figcaption>
+</figure>
+
+<p>Three decisions make this work. <b>Code decides everything code can decide:</b> counts, exact values, which tools were used, what changed. It gives the same answer every time at no cost. <b>A judge answers one row per call:</b> one yes/no question about one fact, shown only the evidence that question needs. <b>A run passes only if every check passes.</b> There is no partial credit and no weighted average, and the verdict is one of three: PASS, FAIL with the name of the check that failed, or ERROR, meaning it could not be graded. An error is never a pass, and a run in which nothing was checked is never a pass.</p>
+
+<h3 id="evidence">Small questions, small evidence</h3>
+<p>In stage 1 a judge is given one big question and everything as evidence: the whole conversation, every tool call, all four notes. In stage 2 the question “does the reply include the escalation to the payments team?” is shown the reply and the note for review A, and nothing else. There is no confident “all done” in view to sway it, and less to overlook. Any single verdict can be checked by an expert in under a minute.</p>
+<p>That last property is what makes it possible to <em>measure the judge</em>. People answer a sample of the same rows, on the same evidence, without seeing the judge’s answer. If they agree with the judge as well as they agree with each other, the judge is trusted to gate. If not, the disagreement is a row to look at, not a number to average away.</p>
+
+<h2 id="shift"><span class="n">03</span>Seven shifts, all in one direction</h2>
+<p>Each shift answers one of the seven faults above.</p>
+<div class="gt-wrap"><table class="gt">
+<thead><tr><th>From (stage 1)</th><th>To (stage 2)</th><th>Because</th></tr></thead>
+<tbody>
+<tr><td>Design effort goes into judges</td><td>Design effort goes into cases</td><td>A general judge has to guess what success means for each run. A case states it.</td></tr>
+<tr><td>Simulated tools</td><td>The real system on seeded data</td><td>Nothing can be verified against a simulation that changes nothing.</td></tr>
+<tr><td>Grade the transcript</td><td>Grade what the run left behind</td><td>The system’s own account of its work is not evidence.</td></tr>
+<tr><td>One broad question</td><td>One yes/no question about one fact, and code wherever code can decide</td><td>Small questions get stable answers. Code gives the same answer every time.</td></tr>
+<tr><td>The judge reads the whole run</td><td>The judge sees only what its question needs</td><td>Less to be swayed by, less to miss, and a person can check it quickly.</td></tr>
+<tr><td>Scores and thresholds</td><td>Pass or fail: every check passed</td><td>One wrong amount spoils the output. An average hides it.</td></tr>
+<tr><td>Trust the judge</td><td>Measure the judge against people answering blind</td><td>A judge is an instrument, and instruments are calibrated.</td></tr>
+</tbody></table></div>
+
+<h2 id="pitfalls"><span class="n">04</span>Pitfalls</h2>
+<h3 id="half">The half move</h3>
+<p>Adopting the format of stage 2 is not the same as getting there. Yes/no questions instead of scores and a pass/fail verdict are the visible part. If the tools are still simulated and the judges still read everything, you have the blind spots of stage 1 with the look of stage 2. The test is four questions, and all four must be yes:</p>
+<div class="findings"><p>The test for stage 2</p><ul>
+<li><b>Written before:</b> is the expected result written in the case before the run?</li>
+<li><b>Real state:</b> is it checked against real state or real artefacts, not a simulation?</li>
+<li><b>Minimal evidence:</b> does each judged question see only the evidence it needs?</li>
+<li><b>Measured judge:</b> has the judge been measured against people?</li>
+</ul></div>
+
+<h3 id="rows">Most bad rows are bad in one of eight ways</h3>
+<div class="gt-wrap"><table class="gt">
+<thead><tr><th>The fault</th><th>Example</th><th>The fix</th></tr></thead>
+<tbody>
+<tr><td>Two facts in one row. If one is missing, the honest answer is neither yes nor no. These rows flip most between reruns.</td><td>“Does the reply cover the usage report and the payments escalation?”</td><td>Split at every “and”.</td></tr>
+<tr><td>Vague words. There is no boundary, so every reader draws their own.</td><td>“Does it handle the upgrade appropriately?”</td><td>Name the fact: “Does the reply recommend upgrading the plan now?”</td></tr>
+<tr><td>Conditional rows. Leaving the fact out passes.</td><td>“If the summary mentions the credit, is it $50?”</td><td>Ask for the fact: “Does it record a $50 credit?”</td></tr>
+<tr><td>Rows that need the whole run. A broad question in disguise.</td><td>“Did it use the notes correctly?”</td><td>Break it down. One row per fact, each with the reply and one note.</td></tr>
+<tr><td>Exact wording. A correct paraphrase fails.</td><td>“Does it say ‘re-run the usage report in 3 months’?”</td><td>Name the fact and what counts: 12 weeks counts.</td></tr>
+<tr><td>Facts the system could not know. Guessing is rewarded and honesty punished.</td><td>“Does it give the date of the next call?” when the data holds none</td><td>A row exists only if the starting state establishes the fact.</td></tr>
+<tr><td>Must-not rows with no temptation. They pass trivially and prove nothing.</td><td>“Does it recommend a US region?” when nothing invites one</td><td>Plant a trap: a contract that forbids US regions, beside a need for a region.</td></tr>
+<tr><td>A judge where code would do. You pay for noise you did not need.</td><td>“Was exactly one chat created?”</td><td>Give it to code.</td></tr>
+</tbody></table></div>
+<p>Two habits repay themselves. Say what failure looks like: a row that states both the passing and the failing condition, and names absence explicitly, is applied more consistently, because a judge that is not told to look for something missing tends to look only for something wrong. And fix the row before you tune the judge: unstable verdicts concentrate in a few faulty rows, and rows that hold two facts are the largest source of flips.</p>
+
+<h3 id="process">Seven ways to get a number that means nothing</h3>
+<div class="gt-wrap"><table class="gt">
+<thead><tr><th>The shortcut</th><th>What goes wrong</th><th>Instead</th></tr></thead>
+<tbody>
+<tr><td>Only testing what must not happen</td><td>A system that refuses everything passes.</td><td>Include cases where helping is right. Use wanted and unwanted rows together.</td></tr>
+<tr><td>Showing reviewers the judge’s verdict</td><td>They agree with it.</td><td>Blind review: the same question, the same evidence, no verdict.</td></tr>
+<tr><td>Counting errors as passes</td><td>A grader that crashed looks like a perfect system.</td><td>An error is never a pass. A run with nothing checked is never a pass.</td></tr>
+<tr><td>One run per case</td><td>Models vary between attempts, so one pass can be luck.</td><td>Run each case several times.</td></tr>
+<tr><td>Tuning on the cases you report</td><td>The number climbs and the system does not.</td><td>Keep some cases held out, and confirm on cases you have not looked at.</td></tr>
+<tr><td>Softening a case until the system passes</td><td>The evaluation stops measuring anything.</td><td>Change a case only when the case is wrong, and record why.</td></tr>
+<tr><td>Starting with the whole benchmark</td><td>It is too broad to specify, and its pass rate means nothing in particular.</td><td>One capability, one sentence, one set of cases. Combine sets later.</td></tr>
+</tbody></table></div>
+<p>When a run fails, decide first which was at fault, the system or the case. Fix the system to pass the case. Fix the case only when the case was wrong.</p>
+
+<h2 id="reading"><span class="n">05</span>Reading the result</h2>
+<p>One attempt passing is not the same as every attempt passing. Run each case several times and report both numbers. <b>pass@1</b> is how often a single attempt passes. <b>pass^k</b> is how often k attempts all pass: for a case with n runs of which c passed, the chance that k runs drawn from the n all passed. The gap between the first and the last is the unreliability (<a class="figref" href="#figure-4">Figure 4</a>).</p>
+
+<figure id="figure-4" class="wide">
+  <div class="scroll"><svg viewBox="0 0 1000 330" width="100%" role="img" aria-label="Ten cases each run five times. pass at 1 is 82 percent, pass to the 3 is 69 percent, pass to the 5 is 60 percent.">
+    <text class="chart-tick" x="40" y="22">RUN 1</text><text class="chart-tick" x="92" y="22">2</text><text class="chart-tick" x="132" y="22">3</text><text class="chart-tick" x="172" y="22">4</text><text class="chart-tick" x="212" y="22">5</text>
+    <g><rect x="40" y="36" width="24" height="24" fill="#F7611D"/><rect x="80" y="36" width="24" height="24" fill="#F7611D"/><rect x="120" y="36" width="24" height="24" fill="#F7611D"/><rect x="160" y="36" width="24" height="24" fill="#F7611D"/><rect x="200" y="36" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="53">5 of 5</text><rect x="40" y="65" width="24" height="24" fill="#F7611D"/><rect x="80" y="65" width="24" height="24" fill="#F7611D"/><rect x="120" y="65" width="24" height="24" fill="#F7611D"/><rect x="160" y="65" width="24" height="24" fill="#F7611D"/><rect x="200" y="65" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="82">5 of 5</text><rect x="40" y="94" width="24" height="24" fill="#F7611D"/><rect x="80" y="94" width="24" height="24" fill="#F7611D"/><rect x="120" y="94" width="24" height="24" fill="#F7611D"/><rect x="160" y="94" width="24" height="24" fill="#F7611D"/><rect x="200" y="94" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="111">5 of 5</text><rect x="40" y="123" width="24" height="24" fill="#F7611D"/><rect x="80" y="123" width="24" height="24" fill="#F7611D"/><rect x="120" y="123" width="24" height="24" fill="#F7611D"/><rect x="160" y="123" width="24" height="24" fill="#F7611D"/><rect x="200" y="123" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="140">4 of 5</text><rect x="40" y="152" width="24" height="24" fill="#F7611D"/><rect x="80" y="152" width="24" height="24" fill="#F7611D"/><rect x="120" y="152" width="24" height="24" fill="#F7611D"/><rect x="160" y="152" width="24" height="24" fill="#F7611D"/><rect x="200" y="152" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="169">5 of 5</text><rect x="40" y="181" width="24" height="24" fill="#F7611D"/><rect x="80" y="181" width="24" height="24" fill="#F7611D"/><rect x="120" y="181" width="24" height="24" fill="#F7611D"/><rect x="160" y="181" width="24" height="24" fill="#E8E6E0"/><rect x="200" y="181" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="198">3 of 5</text><rect x="40" y="210" width="24" height="24" fill="#F7611D"/><rect x="80" y="210" width="24" height="24" fill="#F7611D"/><rect x="120" y="210" width="24" height="24" fill="#F7611D"/><rect x="160" y="210" width="24" height="24" fill="#F7611D"/><rect x="200" y="210" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="227">5 of 5</text><rect x="40" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="80" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="120" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="160" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="200" y="239" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="256">0 of 5</text><rect x="40" y="268" width="24" height="24" fill="#F7611D"/><rect x="80" y="268" width="24" height="24" fill="#F7611D"/><rect x="120" y="268" width="24" height="24" fill="#F7611D"/><rect x="160" y="268" width="24" height="24" fill="#F7611D"/><rect x="200" y="268" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="285">4 of 5</text><rect x="40" y="297" width="24" height="24" fill="#F7611D"/><rect x="80" y="297" width="24" height="24" fill="#F7611D"/><rect x="120" y="297" width="24" height="24" fill="#F7611D"/><rect x="160" y="297" width="24" height="24" fill="#F7611D"/><rect x="200" y="297" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="314">5 of 5</text></g>
+    <text class="chart-title" x="470" y="30">How often does…</text>
+    <text class="chart-lab" x="470" y="78">one attempt pass?</text><rect x="470" y="88" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="88" width="393.6" height="22" fill="#F7611D"/><text class="chart-lab" x="470" y="134" font-weight="600">pass@1 82%</text><text class="chart-muted" x="560" y="134">41 of the 50 runs passed</text>
+    <text class="chart-lab" x="470" y="178">every one of three attempts pass?</text><rect x="470" y="188" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="188" width="331.2" height="22" fill="#1C1C1C"/><text class="chart-lab" x="470" y="234" font-weight="600">pass^3 69%</text><text class="chart-muted" x="570" y="234">per case, averaged over cases</text>
+    <text class="chart-lab" x="470" y="278">every attempt pass?</text><rect x="470" y="288" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="288" width="288" height="22" fill="#7B7973"/><text class="chart-lab" x="470" y="324" font-weight="600">pass^5 60%</text><text class="chart-muted" x="565" y="324">6 of the 10 cases passed all five</text>
+  </svg></div>
+  <figcaption><span class="fl">Figure 4</span><b>The gap between the first number and the last is the unreliability.</b> Ten cases, each run five times; filled squares passed. Illustration. Report the number with what produced it: the system’s version and model, the case-set version, the judge’s model and prompt, runs per case and errored runs.</figcaption>
+</figure>
+
+<p>Two more things belong beside the number. Give an interval, because with twenty cases and a pass rate near half the interval is roughly twenty points either side, and a difference inside it is not a difference. And break failures down by check, so the result says <em>what</em> failed, not only that something did.</p>
+<p>The new number will also be lower than the stage 1 score it replaces, and the two are not comparable. A lenient score of 0.83 judged afterwards and a strict pass rate where every check must pass are different rulers. The system did not get worse; the measurement got sharper. Say so before you publish it.</p>
+
+<h2 id="reliability"><span class="n">06</span>Three kinds of judge reliability, and what may train a model</h2>
+<p>There is no single “judge reliability” number. Three different things are measured, and each answers a different question. Name which one you mean (<a class="figref" href="#figure-5">Figure 5</a>).</p>
+
+<figure id="figure-5" class="wide">
+  <div class="fig-title">Three reliability measures</div>
+  <div class="gt-wrap"><table class="gt">
+  <thead><tr><th>Against</th><th>The question</th><th>How it is measured</th></tr></thead>
+  <tbody>
+  <tr><td>Itself</td><td>Does the judge give the same verdict on the same evidence if asked again?</td><td>Judge stored evidence several times in separate calls and report how often verdicts flip. Temperature zero does not make a judge repeatable.</td></tr>
+  <tr><td>Known answers</td><td>Does it agree with a source that is known to be right?</td><td>Compare with anchors: items whose correct answer comes from a checker or a person other than the judge. Report agreement with an interval, and the false passes and false fails.</td></tr>
+  <tr><td>People</td><td>Does it agree with people as well as people agree with each other?</td><td>Blind labels on a sample of rows. Report chance-corrected agreement (kappa) beside plain agreement, and read every disagreement.</td></tr>
+  </tbody></table></div>
+  <figcaption><span class="fl">Figure 5</span><b>Each measure answers a different question.</b> A judge can be repeatable and still wrong, or right on known cases and unrepeatable on new ones.</figcaption>
+</figure>
+
+<p>This matters most when a score is about to become a <b>training reward</b>. A model trained on a noisy judge learns the judge’s quirks. A stage 1 score is for discovery and monitoring and is never a reward. A score may train a model, or back the claim that a trained model is better, only when all of these hold: it is stage 2, it is repeatable on rerun to a bar fixed before training, it has been checked against people, and its rewards leave room to learn (not nearly all passing, not nearly all failing). Until then, label the number “judge not yet validated against people” and do not train on it.</p>
+
+<h2 id="todo"><span class="n">07</span>What to do</h2>
+<h3 id="where">Find where you are</h3>
+<p>Six questions about your evaluation today. Mostly no means stage 1. Mixed is likely the half move. All yes is stage 2.</p>
+<ol class="gt-list">
+  <li>Could a new colleague read one case and say exactly what a passing result is, without running anything?</li>
+  <li>Does grading inspect what changed (records, files, messages sent) or only the transcript?</li>
+  <li>Are the system’s tools and dependencies real in the evaluation?</li>
+  <li>Can a domain expert answer each judge question yes or no in under a minute, from the evidence the judge gets?</li>
+  <li>When a run fails, does the result name the specific thing that went wrong?</li>
+  <li>Do you know how often your judge disagrees with experts, and with itself on a rerun?</li>
+</ol>
+<div class="call"><p><b>Stage 1 is still the right tool in two places.</b> For <em>discovery</em>, when a new product has no definition of correct yet: read what the general judges flag, and let those failures become your stage 2 cases. For <em>live monitoring</em>, where production traffic has no case specification: the expert labels from stage 2 are what you need to check a general judge.</p></div>
+<p>Move to stage 2 when you cannot explain a change in the score, when reviewers keep disagreeing with the judges, when a regression ships that the evaluation passed, or when the evaluation is about to decide releases.</p>
+
+<h3 id="steps">Nine steps to a first trustworthy set</h3>
+<div class="gt-wrap"><table class="gt">
+<thead><tr><th>Step</th><th>Do this</th><th>You end up with</th></tr></thead>
+<tbody>
+<tr><td>1 · Scope</td><td>Pick one capability or one safety behaviour and write it as one sentence.</td><td>A one-sentence scope</td></tr>
+<tr><td>2 · Environment</td><td>Stand up the real system in a sandbox, from seeded synthetic data, with the clock fixed.</td><td>A sandbox you can reset</td></tr>
+<tr><td>3 · Cases</td><td>Write ten or so cases: a starting state with traps, a request, what must be true afterwards, what may change, what it may and must do.</td><td>About ten case files</td></tr>
+<tr><td>4 · Rows</td><td>Write wanted and unwanted rows, one fact each, each with its evidence.</td><td>Rows, each with its evidence</td></tr>
+<tr><td>5 · Checks</td><td>Give code everything code can decide.</td><td>Code checks</td></tr>
+<tr><td>6 · Review</td><td>Have an expert review every case. Test every row with one output that should pass and one that should fail.</td><td>Reviewed cases, proven rows</td></tr>
+<tr><td>7 · Dry run</td><td>Run five times and read every failure. Was the system at fault or the case?</td><td>A triaged list of failures</td></tr>
+<tr><td>8 · Judge</td><td>Have experts answer a sample of rows blind. Compare their answers with the judge’s.</td><td>Judge-to-expert agreement</td></tr>
+<tr><td>9 · Report</td><td>Report both pass rates, with the versions that produced them.</td><td>Two pass rates, with versions</td></tr>
+</tbody></table></div>
+<p>Then grow the set, one capability at a time, and combine sets later. Keep about a quarter of the cases held out and look at them only to report. Add a case whenever real use shows a failure the set did not catch, and when nearly every case passes every attempt, write harder ones.</p>
+
+<h3 id="costs">What it costs, and what it does not solve</h3>
+<p>Each case takes real authoring work and a domain expert to review it. You need an environment where the real system runs on seeded data, and expert time for blind labelling. It works on fixed cases only, so live traffic still needs general judges. And pass or fail treats a missed escalation and an unsafe recommendation alike, unless you tag rows by severity and report the severe ones separately.</p>
+
+<h3 id="rules">Ten rules</h3>
+<div class="findings"><p>For an evaluation you can make release decisions on</p><ol class="rules">
+<li><b>Write down the expected result before the run.</b> One set of cases tests one capability.</li>
+<li><b>Run the real system</b> against real dependencies, from a known starting state.</li>
+<li><b>Check what changed,</b> not what was claimed.</li>
+<li><b>Let code decide</b> everything code can decide.</li>
+<li><b>Ask a judge one yes/no question</b> about one fact.</li>
+<li><b>Give the judge only the evidence that question needs.</b> If it needs the whole run, rewrite the question.</li>
+<li><b>Test for what must be there and what must not.</b> Plant a temptation for every must-not.</li>
+<li><b>A run passes only if every check passes.</b> An error is not a pass.</li>
+<li><b>Measure the judge</b> against people who cannot see its answers, and against itself on a rerun.</li>
+<li><b>Run each case several times.</b> Report one-attempt and every-attempt pass rates with the versions behind them.</li>
+</ol></div>
+
+<div class="call"><p><b>A version for your coding agent.</b> The same method is written out as operating instructions that an AI agent can follow end to end: the rules, the file formats, reference code and four worked examples. If you use Dyalect, your own coding agent can read it through our MCP server and build the cases in your code, where the real system and its data are.</p></div>
+
+<hr>
+<h3 id="sec-citation">Citation</h3>
+<div class="cite">
+<p>Please cite this work as:</p>
+<pre><code>Dyalect Research, "Decide what good means before the run, not while grading it",
+Dyalect Research, Nov 2026.
+https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/</code></pre>
+<p>Or use the BibTeX citation:</p>
+<pre><code>@article{dyalect2026evaluation,
+  author  = {{Dyalect Research}},
+  title   = {Decide what good means before the run, not while grading it},
+  journal = {Dyalect Research},
+  year    = {2026},
+  month   = nov,
+  url     = {https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/}
+}</code></pre>
+</div>
+<p class="totop"><a href="#toc">↑ Back to contents</a></p>
+
+</article></main>
+
+<footer class="site" data-theme="dark">
+<div class="wrap">
+<div class="foot">
+<div><a class="brand" href="../"><svg viewBox="0 0 32 32" class="mark" aria-hidden="true"><rect x="2.6" y="2.6" width="26.8" height="26.8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="16.4" y="7" width="8.6" height="8.6" fill="currentColor"/></svg><span class="word">dyalect</span></a>
+<p>Specialized models for the enterprise, and the research behind them.</p></div>
+<nav><a href="../">Home</a><a href="../posts/">All posts</a><a href="../feed.xml">RSS</a></nav>
+</div>
+<p class="giant" aria-hidden="true">dyalect.</p>
+<div class="base mono"><span>© 2026 Dyalect</span><span>Posts CC BY 4.0 · code MIT</span></div>
+</div>
+</footer>
+
+
+<script>
+/* reading bar: section label + progress, shown once the hero has scrolled away */
+(function () {
+  var art = document.querySelector("article"), hero = document.querySelector("header.hero");
+  if (!art || !hero) return;
+  var heads = Array.prototype.slice.call(art.querySelectorAll("h2[id]"));
+  var bar = document.createElement("div");
+  bar.className = "readbar"; bar.setAttribute("aria-hidden", "true");
+  bar.innerHTML = '<div class="wrap"><a href="#toc" tabindex="-1"><span class="n"></span><span class="t"></span></a><span class="pct"></span></div><i></i>';
+  document.body.appendChild(bar);
+  var n = bar.querySelector(".n"), t = bar.querySelector(".t"), pct = bar.querySelector(".pct"), line = bar.querySelector("i");
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var y = window.scrollY, vh = window.innerHeight;
+    var top = art.getBoundingClientRect().top + y, h = art.offsetHeight;
+    var p = Math.max(0, Math.min(1, (y + vh * 0.3 - top) / Math.max(1, h - vh * 0.7)));
+    var cur = null;
+    for (var i = 0; i < heads.length; i++) if (heads[i].getBoundingClientRect().top < 120) cur = heads[i];
+    var show = y > hero.offsetHeight && art.getBoundingClientRect().bottom > 80;
+    bar.classList.toggle("show", show);
+    if (cur) {
+      var num = cur.querySelector(".n");
+      n.textContent = num ? num.textContent : "";
+      t.textContent = (num ? cur.textContent.replace(num.textContent, "") : cur.textContent).trim();
+    } else { n.textContent = ""; t.textContent = "Contents"; }
+    pct.textContent = Math.round(p * 100) + "%";
+    line.style.width = (p * 100) + "%";
+  }
+  window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+})();
+</script>
+</body>
+</html>
+<!-- build:enhanced -->

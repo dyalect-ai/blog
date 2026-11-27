@@ -12,5 +12,12 @@
     "date": "2026-11-09",
     "tag": "Weight writing",
     "summary": "Frontier model Fable hand-wrote a wake-word detector’s last layer, 129 numbers, no training, by experimenting like a neuroscientist. Told the method, a 0.8B model failed; taught by example, it caught 84% of held-out synthetic utterances at 2 false alarms per 1,000 clips, against Fable’s 78%."
+  },
+  {
+    "slug": "from-general-judges-to-specified-cases",
+    "title": "Decide what good means before the run, not while grading it",
+    "date": "2026-11-27",
+    "tag": "Evaluation",
+    "summary": "Many teams test an AI system with a judge that reads the whole run and gives a score. It is fine for finding failures and a poor basis for approving a release or training a model. What the two stages of evaluation are, one worked case, and six questions that tell you which you are in."
   }
 ]

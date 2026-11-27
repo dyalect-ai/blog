@@ -4,8 +4,15 @@
   <link rel="alternate" type="text/html" href="https://dyalect-ai.github.io/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://dyalect-ai.github.io/blog/feed.xml"/>
   <id>https://dyalect-ai.github.io/blog/</id>
-  <updated>2026-11-09T00:00:00Z</updated>
+  <updated>2026-11-27T00:00:00Z</updated>
   <author><name>Dyalect Research</name></author>
+  <entry>
+    <title>Decide what good means before the run, not while grading it</title>
+    <link href="https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/"/>
+    <id>https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/</id>
+    <updated>2026-11-27T00:00:00Z</updated>
+    <summary>Many teams test an AI system with a judge that reads the whole run and gives a score. It is fine for finding failures and a poor basis for approving a release or training a model. What the two stages of evaluation are, one worked case, and six questions that tell you which you are in.</summary>
+  </entry>
   <entry>
     <title>We taught a 0.8B model to hand-write part of a neural network</title>
     <link href="https://dyalect-ai.github.io/blog/teaching-a-small-model-to-write-weights/"/>
