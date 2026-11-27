@@ -1075,6 +1075,32 @@ table.gt.jobs td:nth-child(2), table.gt.jobs td:nth-child(3) { white-space: nowr
 @media print { ul.ck { font-size: 8.5pt; } .cg { grid-template-columns: repeat(4, 1fr); gap: 3mm; } .cg-g { grid-template-columns: repeat(3, 1fr); gap: 3mm; } table.gt { font-size: 9pt; } .cg-c, .cg-g p, .cg-r { font-size: 8.5pt; } }
 </style>
 
+<style id="interact">
+/* interactive figures: added by script, hidden in print */
+.ix-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 0; font: 500 11px/1.4 var(--mono); letter-spacing: .04em; color: var(--g600); text-transform: uppercase; }
+.ix-bar .ix-hint::before { content: "↳ "; color: var(--orange); }
+.ix-btn { font: 500 11px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; background: #fff; color: #000; border: 1px solid #000; border-radius: 2px; padding: 6px 10px; cursor: pointer; transition: background .15s, color .15s; }
+.ix-btn:hover { background: #000; color: #fff; }
+.ix-btn:focus-visible, [data-ix]:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+svg [data-ix] { cursor: pointer; transition: opacity .15s, fill .2s; }
+svg [data-ix]:hover { opacity: .72; }
+#f2-bar, #f4-b1, #f4-b3, #f4-b5 { transition: width .35s ease; }
+#figure-3 ul.ck li { cursor: pointer; border-radius: 2px; transition: background .15s, color .15s; }
+#figure-3 ul.ck li:hover, #figure-3 ul.ck li.on { background: rgba(247, 97, 29, .10); }
+.cg-c [data-k] { transition: background .15s, box-shadow .15s; border-radius: 2px; }
+.cg-c [data-k].hl { background: rgba(247, 97, 29, .14); box-shadow: 0 0 0 3px rgba(247, 97, 29, .14); }
+.cg-r .ok { color: #000; margin-right: 8px; font-family: var(--mono); }
+.yn { display: inline-flex; gap: 0; margin-left: 10px; vertical-align: 1px; }
+.yn button { font: 500 10.5px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; background: #fff; color: var(--g600); border: 1px solid var(--g200, #D9D7D0); padding: 4px 8px; cursor: pointer; transition: background .15s, color .15s; }
+.yn button + button { border-left: 0; }
+.yn button:first-child { border-radius: 2px 0 0 2px; } .yn button:last-child { border-radius: 0 2px 2px 0; }
+.yn button[aria-pressed="true"] { background: #000; color: #fff; border-color: #000; }
+#where-q li { text-align: left; hyphens: none; }
+#where-res { margin: 6px 0 24px; padding: 14px 16px; background: var(--g50); border-left: 2px solid #000; font-size: 15px; line-height: 1.5; text-align: left; }
+#where-res b { font-weight: 600; } #where-res .k { display: block; font: 500 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--g600); margin-bottom: 4px; }
+#where-res.done { border-left-color: var(--orange); }
+@media print { .ix-bar, .yn, #where-res { display: none !important; } }
+</style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -1158,17 +1184,17 @@ table.gt.jobs td:nth-child(2), table.gt.jobs td:nth-child(3) { white-space: nowr
 <figure id="figure-2" class="wide">
   <div class="scroll"><svg viewBox="0 0 1000 214" width="100%" role="img" aria-label="The same run read two ways. As a judge score it is 0.95, above a pass mark of 0.85, so it passes. As checks: 6 of 6 code checks pass and 12 of 13 judge rows pass; the failed row is the escalation to the payments team, so the run fails.">
     <text class="chart-title" x="40" y="30">As a score</text>
-    <rect x="40" y="60" width="400" height="28" fill="#E8E6E0"/><rect x="40" y="60" width="380" height="28" fill="#1C1C1C"/>
+    <rect x="40" y="60" width="400" height="28" fill="#E8E6E0"/><rect id="f2-bar" x="40" y="60" width="380" height="28" fill="#1C1C1C"/>
     <line x1="380" x2="380" y1="50" y2="100" stroke="#C4281C" stroke-dasharray="5 4"/><text class="chart-muted" x="380" y="116" text-anchor="middle">pass mark 0.85</text>
-    <text class="chart-lab" x="428" y="80" font-weight="600">0.95</text>
-    <text class="chart-lab" x="40" y="150" font-weight="600">PASS</text>
-    <text class="chart-muted" x="40" y="172">Nobody learns that a required follow-up was left out.</text>
+    <text id="f2-val" class="chart-lab" x="428" y="80" font-weight="600">0.95</text>
+    <text id="f2-sv" class="chart-lab" x="40" y="150" font-weight="600">PASS</text>
+    <text id="f2-sm" class="chart-muted" x="40" y="172">Nobody learns that a required follow-up was left out.</text>
     <text class="chart-title" x="540" y="30">As a set of checks</text>
     <text class="chart-muted" x="540" y="72">Code · 6</text><rect x="640" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="668" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="696" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="724" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="752" y="56" width="22" height="22" fill="#1C1C1C"/><rect x="780" y="56" width="22" height="22" fill="#1C1C1C"/>
     <text class="chart-muted" x="540" y="106">Judge · 13</text><rect x="640" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="668" y="90" width="22" height="22" fill="#C4281C"/><rect x="696" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="724" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="752" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="780" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="808" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="836" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="864" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="892" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="920" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="948" y="90" width="22" height="22" fill="#1C1C1C"/><rect x="976" y="90" width="22" height="22" fill="#1C1C1C"/>
-    <line x1="707" x2="707" y1="114" y2="126" stroke="#C4281C"/><text class="chart-muted" x="707" y="140" text-anchor="middle" style="fill:#C4281C">payments escalation</text>
-    <text class="chart-lab" x="540" y="172" style="fill:#C4281C;font-weight:600">FAIL</text>
-    <text class="chart-muted" x="584" y="172">18 of 19 pass. The result names the one thing to fix.</text>
+    <g id="f2-ptr"><line x1="707" x2="707" y1="114" y2="126" stroke="#C4281C"/><text class="chart-muted" x="707" y="140" text-anchor="middle" style="fill:#C4281C">payments escalation</text></g>
+    <text id="f2-cv" class="chart-lab" x="540" y="172" style="fill:#C4281C;font-weight:600">FAIL</text>
+    <text id="f2-cm" class="chart-muted" x="584" y="172">18 of 19 pass. The result names the one thing to fix.</text>
   </svg></div>
   <figcaption><span class="fl">Figure 2</span><b>One missed follow-up passes as a score and fails as a set of checks.</b> The run is the worked case in <a class="figref" href="#figure-3">Figure 3</a>: six code checks and thirteen yes/no rows answered by a judge, of which exactly one fails. Illustration.</figcaption>
 </figure>
@@ -1193,17 +1219,17 @@ table.gt.jobs td:nth-child(2), table.gt.jobs td:nth-child(3) { white-space: nowr
   <div class="fig-title">One case, graded</div>
   <div class="fig-sub">Request: “Review my recent account reviews and create a daily digest of required and overdue follow-ups.” Orange rules mark a trap planted on purpose; red marks what the reply left out.</div>
   <div class="cg">
-    <div class="cg-c"><b>A · Billing review</b><span>Re-run the usage report in 3 months</span><span class="miss">Escalate to the payments team</span><span>Review the error rate in 2 weeks</span><span class="trap">Upgrade only if the error rate is still high</span><span class="trap">Cause of the duplicate charges not established</span></div>
-    <div class="cg-c"><b>B · Outage follow-up</b><span>Re-run the health check today</span><span>Open an incident call today</span><span class="trap">An open task already tracks it</span></div>
-    <div class="cg-c"><b>C · Hosting migration</b><span>Review in 48 hours</span><span class="trap">The contract forbids any US region, beside a need for a new region</span></div>
-    <div class="cg-c"><b>D · Routine review</b><span class="trap">No follow-up needed: tempts an invented one</span></div>
+    <div class="cg-c"><b>A · Billing review</b><span data-k="a1">Re-run the usage report in 3 months</span><span data-k="a2" class="miss">Escalate to the payments team</span><span data-k="a3">Review the error rate in 2 weeks</span><span data-k="a4" class="trap">Upgrade only if the error rate is still high</span><span data-k="a5" class="trap">Cause of the duplicate charges not established</span></div>
+    <div class="cg-c"><b>B · Outage follow-up</b><span data-k="b1">Re-run the health check today</span><span data-k="b2">Open an incident call today</span><span data-k="b3" class="trap">An open task already tracks it</span></div>
+    <div class="cg-c"><b>C · Hosting migration</b><span data-k="c1">Review in 48 hours</span><span data-k="c2" class="trap">The contract forbids any US region, beside a need for a new region</span></div>
+    <div class="cg-c"><b>D · Routine review</b><span data-k="d1" class="trap">No follow-up needed: tempts an invented one</span></div>
   </div>
   <div class="cg-g">
-    <div><i>Code · 6 checks on what the run did</i><ul class="ck"><li>The run completed</li><li>The trace is complete</li><li>Exactly one chat was created</li><li>Nothing else changed</li><li>Only permitted tools were used</li><li>Notes A, B, C and open tasks were read</li></ul></div>
-    <div><i>Judge · 7 wanted rows, one fact each</i><ul class="ck"><li>Usage report re-run in 3 months</li><li class="no">Escalation to the payments team</li><li>Error rate review in 2 weeks</li><li>Health check today</li><li>Incident call today</li><li>Outage already tracked</li><li>Migration review at 48 hours</li></ul></div>
-    <div><i>Judge · 6 unwanted rows, one trap each</i><ul class="ck"><li>No US region</li><li>No upgrade now</li><li>No plan change</li><li>No cause stated as established</li><li>No follow-up for review D</li><li>No new task for the outage</li></ul></div>
+    <div><i>Code · 6 checks on what the run did</i><ul class="ck"><li>The run completed</li><li>The trace is complete</li><li>Exactly one chat was created</li><li>Nothing else changed</li><li>Only permitted tools were used</li><li data-k="a1 a2 a3 a4 a5 b1 b2 b3 c1 c2">Notes A, B, C and open tasks were read</li></ul></div>
+    <div><i>Judge · 7 wanted rows, one fact each</i><ul class="ck"><li data-k="a1">Usage report re-run in 3 months</li><li data-k="a2" class="no">Escalation to the payments team</li><li data-k="a3">Error rate review in 2 weeks</li><li data-k="b1">Health check today</li><li data-k="b2">Incident call today</li><li data-k="b3">Outage already tracked</li><li data-k="c1">Migration review at 48 hours</li></ul></div>
+    <div><i>Judge · 6 unwanted rows, one trap each</i><ul class="ck"><li data-k="c2">No US region</li><li data-k="a4">No upgrade now</li><li data-k="a4">No plan change</li><li data-k="a5">No cause stated as established</li><li data-k="d1">No follow-up for review D</li><li data-k="b3">No new task for the outage</li></ul></div>
   </div>
-  <div class="cg-r"><b class="bad">FAIL</b> One row failed: the reply leaves out the escalation to the payments team. The result names what to fix.</div>
+  <div class="cg-r" id="f3-r"><b class="bad">FAIL</b> One row failed: the reply leaves out the escalation to the payments team. The result names what to fix.</div>
   <figcaption><span class="fl">Figure 3</span><b>Eighteen of nineteen checks pass and the run fails.</b> Every row is one fact, anchored in the seeded data; ✓ passed, ✗ failed. Illustration; all data is invented.</figcaption>
 </figure>
 
@@ -1277,9 +1303,9 @@ table.gt.jobs td:nth-child(2), table.gt.jobs td:nth-child(3) { white-space: nowr
     <text class="chart-tick" x="40" y="22">RUN 1</text><text class="chart-tick" x="92" y="22">2</text><text class="chart-tick" x="132" y="22">3</text><text class="chart-tick" x="172" y="22">4</text><text class="chart-tick" x="212" y="22">5</text>
     <g><rect x="40" y="36" width="24" height="24" fill="#F7611D"/><rect x="80" y="36" width="24" height="24" fill="#F7611D"/><rect x="120" y="36" width="24" height="24" fill="#F7611D"/><rect x="160" y="36" width="24" height="24" fill="#F7611D"/><rect x="200" y="36" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="53">5 of 5</text><rect x="40" y="65" width="24" height="24" fill="#F7611D"/><rect x="80" y="65" width="24" height="24" fill="#F7611D"/><rect x="120" y="65" width="24" height="24" fill="#F7611D"/><rect x="160" y="65" width="24" height="24" fill="#F7611D"/><rect x="200" y="65" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="82">5 of 5</text><rect x="40" y="94" width="24" height="24" fill="#F7611D"/><rect x="80" y="94" width="24" height="24" fill="#F7611D"/><rect x="120" y="94" width="24" height="24" fill="#F7611D"/><rect x="160" y="94" width="24" height="24" fill="#F7611D"/><rect x="200" y="94" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="111">5 of 5</text><rect x="40" y="123" width="24" height="24" fill="#F7611D"/><rect x="80" y="123" width="24" height="24" fill="#F7611D"/><rect x="120" y="123" width="24" height="24" fill="#F7611D"/><rect x="160" y="123" width="24" height="24" fill="#F7611D"/><rect x="200" y="123" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="140">4 of 5</text><rect x="40" y="152" width="24" height="24" fill="#F7611D"/><rect x="80" y="152" width="24" height="24" fill="#F7611D"/><rect x="120" y="152" width="24" height="24" fill="#F7611D"/><rect x="160" y="152" width="24" height="24" fill="#F7611D"/><rect x="200" y="152" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="169">5 of 5</text><rect x="40" y="181" width="24" height="24" fill="#F7611D"/><rect x="80" y="181" width="24" height="24" fill="#F7611D"/><rect x="120" y="181" width="24" height="24" fill="#F7611D"/><rect x="160" y="181" width="24" height="24" fill="#E8E6E0"/><rect x="200" y="181" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="198">3 of 5</text><rect x="40" y="210" width="24" height="24" fill="#F7611D"/><rect x="80" y="210" width="24" height="24" fill="#F7611D"/><rect x="120" y="210" width="24" height="24" fill="#F7611D"/><rect x="160" y="210" width="24" height="24" fill="#F7611D"/><rect x="200" y="210" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="227">5 of 5</text><rect x="40" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="80" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="120" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="160" y="239" width="24" height="24" fill="#E8E6E0"/><rect x="200" y="239" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="256">0 of 5</text><rect x="40" y="268" width="24" height="24" fill="#F7611D"/><rect x="80" y="268" width="24" height="24" fill="#F7611D"/><rect x="120" y="268" width="24" height="24" fill="#F7611D"/><rect x="160" y="268" width="24" height="24" fill="#F7611D"/><rect x="200" y="268" width="24" height="24" fill="#E8E6E0"/><text class="chart-tick" x="250" y="285">4 of 5</text><rect x="40" y="297" width="24" height="24" fill="#F7611D"/><rect x="80" y="297" width="24" height="24" fill="#F7611D"/><rect x="120" y="297" width="24" height="24" fill="#F7611D"/><rect x="160" y="297" width="24" height="24" fill="#F7611D"/><rect x="200" y="297" width="24" height="24" fill="#F7611D"/><text class="chart-tick" x="250" y="314">5 of 5</text></g>
     <text class="chart-title" x="470" y="30">How often does…</text>
-    <text class="chart-lab" x="470" y="78">one attempt pass?</text><rect x="470" y="88" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="88" width="393.6" height="22" fill="#F7611D"/><text class="chart-lab" x="470" y="134" font-weight="600">pass@1 82%</text><text class="chart-muted" x="560" y="134">41 of the 50 runs passed</text>
-    <text class="chart-lab" x="470" y="178">every one of three attempts pass?</text><rect x="470" y="188" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="188" width="331.2" height="22" fill="#1C1C1C"/><text class="chart-lab" x="470" y="234" font-weight="600">pass^3 69%</text><text class="chart-muted" x="570" y="234">per case, averaged over cases</text>
-    <text class="chart-lab" x="470" y="278">every attempt pass?</text><rect x="470" y="288" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="288" width="288" height="22" fill="#7B7973"/><text class="chart-lab" x="470" y="324" font-weight="600">pass^5 60%</text><text class="chart-muted" x="565" y="324">6 of the 10 cases passed all five</text>
+    <text class="chart-lab" x="470" y="78">one attempt pass?</text><rect x="470" y="88" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="88" width="393.6" height="22" fill="#F7611D" id="f4-b1"/><text id="f4-v1" class="chart-lab" x="470" y="134" font-weight="600">pass@1 82%</text><text id="f4-m1" class="chart-muted" x="560" y="134">41 of the 50 runs passed</text>
+    <text class="chart-lab" x="470" y="178">every one of three attempts pass?</text><rect x="470" y="188" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="188" width="331.2" height="22" fill="#1C1C1C" id="f4-b3"/><text id="f4-v3" class="chart-lab" x="470" y="234" font-weight="600">pass^3 69%</text><text class="chart-muted" x="570" y="234">per case, averaged over cases</text>
+    <text class="chart-lab" x="470" y="278">every attempt pass?</text><rect x="470" y="288" width="480" height="22" fill="#E8E6E0"/><rect x="470" y="288" width="288" height="22" fill="#7B7973" id="f4-b5"/><text id="f4-v5" class="chart-lab" x="470" y="324" font-weight="600">pass^5 60%</text><text id="f4-m5" class="chart-muted" x="565" y="324">6 of the 10 cases passed all five</text>
   </svg></div>
   <figcaption><span class="fl">Figure 4</span><b>The gap between the first number and the last is the unreliability.</b> Ten cases, each run five times; filled squares passed. Illustration. Report the number with what produced it: the system’s version and model, the case-set version, the judge’s model and prompt, runs per case and errored runs.</figcaption>
 </figure>
@@ -1314,7 +1340,7 @@ table.gt.jobs td:nth-child(2), table.gt.jobs td:nth-child(3) { white-space: nowr
 <h2 id="todo"><span class="n">07</span>What to do</h2>
 <h3 id="where">Find where you are</h3>
 <p>Six questions about your evaluation today. Mostly no means stage 1. Mixed is likely the half move. All yes is stage 2.</p>
-<ol class="gt-list">
+<ol class="gt-list" id="where-q">
   <li>Could a new colleague read one case and say exactly what a passing result is, without running anything?</li>
   <li>Does grading inspect what changed (records, files, messages sent) or only the transcript?</li>
   <li>Are the system’s tools and dependencies real in the evaluation?</li>
@@ -1441,6 +1467,128 @@ https://dyalect-ai.github.io/blog/from-general-judges-to-specified-cases/</code>
   window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
   window.addEventListener("resize", update);
   update();
+})();
+</script>
+<script id="interact-js">
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function bar(btns, hint) {
+    var d = document.createElement('div'); d.className = 'ix-bar';
+    var h = document.createElement('span'); h.className = 'ix-hint'; h.textContent = hint; d.appendChild(h);
+    btns.forEach(function (b) { var e = document.createElement('button'); e.type = 'button'; e.className = 'ix-btn'; e.textContent = b[0]; e.addEventListener('click', b[1]); d.appendChild(e); });
+    return d;
+  }
+  function clickable(el, label, fn) {
+    el.setAttribute('data-ix', ''); el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button'); el.setAttribute('aria-label', label);
+    el.addEventListener('click', fn);
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
+  }
+  function list(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+  var RED = '#C4281C', INK = '#1C1C1C';
+
+  /* Figure 2: one run, two rulers */
+  var f2 = $('figure-2');
+  if (f2) {
+    var names = ['the run completing', 'a complete trace', 'exactly one chat', 'nothing else changing', 'permitted tools only', 'the notes being read',
+      'the usage report', 'the payments escalation', 'the error rate review', 'the health check', 'the incident call', 'the outage already tracked', 'the migration review',
+      'no US region', 'no upgrade now', 'no plan change', 'no cause stated', 'no follow-up for D', 'no new outage task'];
+    var sq = Array.prototype.slice.call(f2.querySelectorAll('rect[width="22"]'));
+    var init = sq.map(function (r) { return r.getAttribute('fill') !== RED; });
+    var ok = init.slice(), touched = false;
+    function draw2() {
+      var n = ok.filter(Boolean).length, sc = n / 19, w = 400 * sc;
+      sq.forEach(function (r, i) { r.setAttribute('fill', ok[i] ? INK : RED); r.setAttribute('aria-pressed', ok[i] ? 'false' : 'true'); });
+      $('f2-bar').setAttribute('width', w.toFixed(1));
+      $('f2-val').textContent = sc.toFixed(2); $('f2-val').setAttribute('x', (40 + w + 8).toFixed(1));
+      var sPass = sc >= 0.85, cPass = n === 19, missed = [];
+      ok.forEach(function (v, i) { if (!v) missed.push(names[i]); });
+      $('f2-sv').textContent = sPass ? 'PASS' : 'FAIL'; $('f2-sv').style.fill = sPass ? '' : RED;
+      $('f2-sm').textContent = cPass ? 'Passes, and this time it is right.' : sPass ? 'Nobody learns that ' + (missed.length > 1 ? missed.length + ' checks failed.' : missed[0] + ' failed.') : 'Fails, but the score does not say why.';
+      $('f2-cv').textContent = cPass ? 'PASS' : 'FAIL'; $('f2-cv').style.fill = cPass ? INK : RED;
+      $('f2-cm').textContent = cPass ? 'All 19 pass.' : n + ' of 19 pass. Missing: ' + missed[0] + (missed.length > 1 ? ' and ' + (missed.length - 1) + ' more' : '') + '.';
+      $('f2-ptr').style.display = touched ? 'none' : '';
+    }
+    sq.forEach(function (r, i) { clickable(r, 'Toggle check: ' + names[i], function () { ok[i] = !ok[i]; touched = true; draw2(); }); });
+    f2.insertBefore(bar([['Reset', function () { ok = init.slice(); touched = false; draw2(); }]], 'Click a square to fail or fix that check. It takes three failures to move the score below the pass mark.'), f2.querySelector('figcaption'));
+  }
+
+  /* Figure 3: the graded case */
+  var f3 = $('figure-3');
+  if (f3) {
+    var rows = Array.prototype.slice.call(f3.querySelectorAll('ul.ck li'));
+    var init3 = rows.map(function (li) { return li.classList.contains('no'); });
+    function items(li) { return (li.getAttribute('data-k') || '').split(' ').filter(Boolean).map(function (k) { return f3.querySelector('.cg-c [data-k="' + k + '"]'); }).filter(Boolean); }
+    function draw3() {
+      f3.querySelectorAll('.cg-c .miss').forEach(function (e) { e.classList.remove('miss'); });
+      var bad = [];
+      rows.forEach(function (li) {
+        var no = li.classList.contains('no'); li.setAttribute('aria-pressed', no ? 'true' : 'false');
+        if (no) { bad.push(li.textContent.trim().toLowerCase()); if (li.getAttribute('data-k').indexOf(' ') < 0) items(li).forEach(function (e) { e.classList.add('miss'); }); }
+      });
+      $('f3-r').innerHTML = bad.length ? '<b class="bad">FAIL</b> ' + (bad.length === 1 ? 'One check' : bad.length + ' checks') + ' failed: ' + list(bad) + '. The result names what to fix.'
+        : '<b class="ok">PASS</b> All nineteen checks passed. Only now does the run pass.';
+    }
+    rows.forEach(function (li) {
+      clickable(li, 'Toggle: ' + li.textContent.trim(), function () { li.classList.toggle('no'); draw3(); });
+      ['mouseenter', 'focus'].forEach(function (ev) { li.addEventListener(ev, function () { li.classList.add('on'); items(li).forEach(function (e) { e.classList.add('hl'); }); }); });
+      ['mouseleave', 'blur'].forEach(function (ev) { li.addEventListener(ev, function () { li.classList.remove('on'); items(li).forEach(function (e) { e.classList.remove('hl'); }); }); });
+    });
+    f3.insertBefore(bar([['Reset', function () { rows.forEach(function (li, i) { li.classList.toggle('no', init3[i]); }); draw3(); }]], 'Point at a check to see its evidence in the seeded data. Click it to flip the result.'), f3.querySelector('figcaption'));
+    draw3();
+  }
+
+  /* Figure 4: pass@1 against pass^k */
+  var f4 = $('figure-4');
+  if (f4) {
+    var cells = Array.prototype.slice.call(f4.querySelectorAll('rect[width="24"]'));
+    var counts = Array.prototype.slice.call(f4.querySelectorAll('text.chart-tick')).filter(function (t) { return / of 5$/.test(t.textContent); });
+    var ON = '#F7611D', OFF = '#E8E6E0';
+    var init4 = cells.map(function (r) { return r.getAttribute('fill') === ON; }), st = init4.slice();
+    function C(n, k) { if (k > n) return 0; var r = 1; for (var i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; }
+    function draw4() {
+      var tot = 0, p3 = 0, p5 = 0, all = 0;
+      for (var c = 0; c < 10; c++) {
+        var n = 0; for (var j = 0; j < 5; j++) { var on = st[c * 5 + j]; cells[c * 5 + j].setAttribute('fill', on ? ON : OFF); cells[c * 5 + j].setAttribute('aria-pressed', on ? 'true' : 'false'); n += on ? 1 : 0; }
+        counts[c].textContent = n + ' of 5'; tot += n; p3 += C(n, 3) / C(5, 3); p5 += n === 5 ? 1 : 0;
+      }
+      var v1 = tot / 50, v3 = p3 / 10, v5 = p5 / 10;
+      $('f4-b1').setAttribute('width', (480 * v1).toFixed(1)); $('f4-b3').setAttribute('width', (480 * v3).toFixed(1)); $('f4-b5').setAttribute('width', (480 * v5).toFixed(1));
+      $('f4-v1').textContent = 'pass@1 ' + Math.round(v1 * 100) + '%'; $('f4-v3').textContent = 'pass^3 ' + Math.round(v3 * 100) + '%'; $('f4-v5').textContent = 'pass^5 ' + Math.round(v5 * 100) + '%';
+      $('f4-m1').textContent = tot + ' of the 50 runs passed'; $('f4-m5').textContent = p5 + ' of the 10 cases passed all five';
+    }
+    cells.forEach(function (r, i) { clickable(r, 'Toggle case ' + (Math.floor(i / 5) + 1) + ', run ' + (i % 5 + 1), function () { st[i] = !st[i]; draw4(); }); });
+    f4.insertBefore(bar([
+      ['Reset', function () { st = init4.slice(); draw4(); }],
+      ['Make case 6 reliable', function () { for (var j = 0; j < 5; j++) st[25 + j] = true; draw4(); }]
+    ], 'Click a run to flip it. One flaky run barely moves pass@1 and costs a whole case in pass^5.'), f4.querySelector('figcaption'));
+  }
+
+  /* Find where you are */
+  var q = $('where-q');
+  if (q) {
+    var lis = Array.prototype.slice.call(q.children), ans = lis.map(function () { return null; });
+    var res = document.createElement('div'); res.id = 'where-res'; res.setAttribute('aria-live', 'polite'); q.parentNode.insertBefore(res, q.nextSibling);
+    var fix = ['write the expected result into each case', 'grade what changed, not the transcript', 'run the real system on seeded data', 'split judge questions until an expert can answer each in a minute', 'make every failure name the check that failed', 'measure the judge against blind labels and against itself'];
+    function drawQ() {
+      var done = ans.filter(function (a) { return a !== null; }).length, yes = ans.filter(function (a) { return a === true; }).length;
+      res.classList.toggle('done', done === 6);
+      if (!done) { res.innerHTML = '<span class="k">Your answers</span>Answer the six questions for your own evaluation today.'; return; }
+      var stage = yes === 6 ? 'Stage 2.' : yes <= 1 ? 'Stage 1.' : 'Likely the half move.';
+      var nos = []; ans.forEach(function (a, i) { if (a === false) nos.push(i); });
+      var next = nos.length ? ' Next: ' + fix[nos[0]] + (nos.length > 1 ? ', then ' + (nos.length - 1) + ' more.' : '.') : ' Keep the judge measured as the cases grow.';
+      res.innerHTML = '<span class="k">' + yes + ' yes of ' + done + ' answered' + (done < 6 ? ' · ' + (6 - done) + ' to go' : '') + '</span><b>' + (done < 6 ? 'So far: ' : '') + stage + '</b>' + next;
+    }
+    lis.forEach(function (li, i) {
+      var g = document.createElement('span'); g.className = 'yn'; g.setAttribute('role', 'group'); g.setAttribute('aria-label', 'Answer question ' + (i + 1));
+      [['Yes', true], ['No', false]].forEach(function (o) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = o[0]; b.setAttribute('aria-pressed', 'false');
+        b.addEventListener('click', function () { ans[i] = ans[i] === o[1] ? null : o[1]; g.querySelectorAll('button').forEach(function (x, k) { x.setAttribute('aria-pressed', String(ans[i] === (k === 0))); }); drawQ(); });
+        g.appendChild(b);
+      });
+      li.appendChild(g);
+    });
+    drawQ();
+  }
 })();
 </script>
 </body>
